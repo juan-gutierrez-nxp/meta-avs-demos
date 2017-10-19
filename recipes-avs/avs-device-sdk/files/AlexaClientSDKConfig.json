@@ -1,0 +1,16 @@
+{
+	"authDelegate": {
+		"deviceTypeId": "",
+		"clientSecret": "",
+		"refreshToken": "",
+		"clientId": "",
+		"deviceSerialNumber": ""
+	},
+	"alertsCapabilityAgent": {
+		"alarmSoundFilePath": "sounds/med_system_alerts_melodic_01._TTH_.mp3",
+		"databaseFilePath": "alerts.db",
+		"timerSoundFilePath": "sounds/med_system_alerts_melodic_02._TTH_.mp3",
+		"alarmShortSoundFilePath": "sounds/med_system_alerts_melodic_01_short._TTH_.wav",
+		"timerShortSoundFilePath": "sounds/med_system_alerts_melodic_02_short._TTH_.wav"
+	}
+}
