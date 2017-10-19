@@ -1,0 +1,44 @@
+From 7b54fd46473f86a1a55fd6c9861b61dfced44461 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Wed, 19 Jul 2017 10:00:15 -0500
+Subject: [PATCH] Set the right clk provider of SYS_MCLK for SGTL codec
+
+The SYS_MCLK was set to a wrong driver which was causing
+some desync with VLC playback.
+
+Also removing the assigned_rate so the sai_root_clk
+is set to 24MHZ which is the freq of the external oscilator
+connected on SYS_MCLK on the SGTL codec.
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ arch/arm/boot/dts/imx7d-pico.dtsi | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx7d-pico.dtsi b/arch/arm/boot/dts/imx7d-pico.dtsi
+index ad6385b..4041136 100644
+--- a/arch/arm/boot/dts/imx7d-pico.dtsi
++++ b/arch/arm/boot/dts/imx7d-pico.dtsi
+@@ -16,7 +16,7 @@
+ #define PICO_AUD_I2S_CHANNEL sai1
+ #define PICO_AUD_MUX_INT 3
+ #define PICO_AUD_MUX_EXT 3
+-#define PICO_AUD_CLK_SRC clks 201
++#define PICO_AUD_CLK_SRC clks 143
+ 
+ /* GPIOs on PICO connector */
+ #define PICO_EXT_GPIO_P24 gpio2 0
+@@ -756,10 +756,6 @@
+ &sai1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_sai1>;
+-	assigned-clocks = <&clks IMX7D_SAI1_ROOT_SRC>,
+-			  <&clks IMX7D_SAI1_ROOT_CLK>;
+-	assigned-clock-parents = <&clks IMX7D_PLL_AUDIO_POST_DIV>;
+-	assigned-clock-rates = <0>, <24576000>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.7.4
+
