@@ -16,7 +16,7 @@ Create/Move to a directory where you want to install the AVS yocto build envirom
 Let's call this as <yocto_dir>
 
 	$ cd <yocto_dir>
-	$ repo init -u git://git.freescale.com/imx/meta-avs-demos.git -b master -m imx7d-pico-avs_sdk_4.1.15-1.0.0.xml
+	$ repo init -u https://source.codeaurora.org/external/imx/meta-avs-demos -b master -m imx7d-pico-avs-sdk_4.1.15-1.0.0.xml
 
 #### Download the AVS BSP build environment:
 
@@ -31,15 +31,6 @@ Run the avs-setup-demo script as follows to setup your environment for the imx7d
 Where <build_sdk> is the name you will give to your build folder.
 
 After acepting the EULA the script will prompt if you want to enable:
-
-#### WIFI
-
-	Enable WIFI for imx7d-pic board[Y/N]? y
-
-
-**NOTE:** You should get the WiFi firmware binaries from Technexion. Otherwise select N (Check Appendix A for more details on how to install the Wifi Firmware from the build)
-
-**Reacall that Wifi/BT packages are optional, since AVS/Alexa can work with an Ethernet conexion too.**
 
 #### Sound Card selection
 
@@ -74,7 +65,6 @@ Next is an example for a Preinstalled AVS_SDK with Conxant Sound Card support an
 	==========================================================
 	 AVS configuration is now ready at conf/local.conf
 
-	 - WiFi/BT = Disabled
 	 - Sound Card = Conexant
 	 - AVS_SDK pre-installed
 
@@ -97,26 +87,30 @@ Go to your <build_sdk> directory and start the build of the avs-image
 
 ### Step 4 : Deploying the built images to SD/MMC card to boot on target board.
 
-After a build has succesfully completed, the created image resides in your
+After a build has succesfully completed, the created image resides at
 
     <build_sdk>/tmp/deploy/images/imx7d-pico/
 
 In this directory, you will find the **imx7d-pico-avs.sdcard** image.
 
-Flash the .sdcard image into eMMC device of your board with the following commands:
+To Flash the .sdcard image into the eMMC device of your PicoPi board follow the next steps:
 
+- Download the [bootbomb flasher](ftp://ftp.technexion.net/development_resources/development_tools/installer/pico-imx7-imx6ul-imx6ull_otg-installer_20170112.zip) and follow the instruction on **Section 4. Board Reflashing** of the [Quick Start Guide for AVS kit](https://www.nxp.com/docs/en/user-guide/Quick-Start-Guide-for-Arrow-AVS-kit.pdf) to setup your board on flashing mode.
 
-Copy the built SDCARD file
+- Copy the built SDCARD file
 
-	$ sudo dd if=imx7d-pico-avs.sdcard of=/dev/sd<partition> bs=1M && sync
+		$ sudo dd if=imx7d-pico-avs.sdcard of=/dev/sd<partition> bs=1M && sync
+		$ sync
 
-Let’s properly eject the pico-imx7d board:
+- Properly eject the pico-imx7d board:
 
-	$ sudo eject /dev/sd<partition>
+		$ sudo eject /dev/sd<partition>
 
 ---
 
 ### NXP Documentation
+
+Refer to the [Quick Start Quide for AVS SDK](https://www.nxp.com/docs/en/user-guide/Quick-Start-Guide-for-Arrow-AVS-kit.pdf) to fully setup your PicoPi board with  Synaptics 2Mic and PicoPi i.mx7D
 
 For a more comprehensive understanding of Yocto, its features and setup; more image build and deployment options and customization, please take a look at the [i.MX_Yocto_Project_User's_Guide.pdf](https://www.nxp.com/webapp/Download?colCode=L4.1.15_1.0.0_LINUX_DOCS&Parent_nodeId=1276810298241720831102&Parent_pageType=product) document from the Linux documents bundle mentioned at the beginning of this document.
 
@@ -124,38 +118,3 @@ For a more detailed description of the Linux BSP, u-boot use and configuration, 
 
 
 ---
-### Appendix A. How to install Wifi firmware on the image
-
-**NOTE:** If you enable the Wifi on you setup.
-
-* **firmware-bcmdhd** Contact [Technexion](https://www.technexion.com/support/) FAE or Sales to get licensed firmware files.
-
-
-## Copy the Wifi/BT firmware binaries to your yocto downloads directory
-
-Before building (bitbake) the image you should include the firmware binaries into the build.
-if there is no downloads directory (at this point yet) just create it on your <yocto_dir> directory
-
-	$ cd <yocto_dir>
-	$ mkdir downloads
-
-It should look like this:
-
-	$ ls <yocto_dir>
-	avs.conf           build_sdk  fsl-setup-release.sh  README-IMXBSP      sources
-	avs-setup-demo.sh  downloads   README
-
-
-Copy the firmware-bcmhd files to your downloads directory (If enabled on Step 2):
-
-	$ cp -v  bcm4339a0.hcd <yocto_dir>/downloads
-	$ cp -v  bcm43438a0.hcd <yocto_dir>/downloads
-	$ cp -v  fw_bcm4339a0_ag_apsta.bin <yocto_dir>/downloads
-	$ cp -v  fw_bcm4339a0_ag.bin <yocto_dir>/downloads
-	$ cp -v  fw_bcm4339a0_ag_mfg.bin <yocto_dir>/downloads
-	$ cp -v  fw_bcm43438a0_apsta.bin <yocto_dir>/downloads
-	$ cp -v  fw_bcm43438a0.bin <yocto_dir>/downloads
-	$ cp -v  fw_bcm43438a0_mfg.bin <yocto_dir>/downloads
-	$ cp -v  nvram_ap6212.txt <yocto_dir>/downloads
-	$ cp -v  nvram_ap6335.txt <yocto_dir>/downloads
-
