@@ -8,8 +8,7 @@
   <remote fetch="git://git.openembedded.org" name="oe"/>
   <remote fetch="git://github.com/OSSystems" name="OSSystems"/>
   <remote fetch="git://github.com/meta-qt5"  name="QT5"/>
-  <remote fetch="git://git.freescale.com/imx" name="fsl-release" />
-  <remote fetch="http://sw-stash.freescale.net/scm/vs" name="fsl-stash"/>
+  <remote fetch="https://source.codeaurora.org/external/imx" name="fsl-release" />
 
   <project remote="yocto" revision="f5da2a5913319ad6ac2141438ba1aa17576326ab" name="poky" path="sources/poky"/>
   <project remote="yocto" revision="be78894e4682f111575470fb23e51e6ba523508d" name="meta-fsl-arm" path="sources/meta-fsl-arm"/>
@@ -27,12 +26,12 @@
   <project remote="OSSystems" revision="5882f0efb19f7428df3e170ffb08d5d654277382" name="meta-browser" path="sources/meta-browser" />
   <project remote="QT5" revision="ccae79be69c5268df3b47e4e14cea0591c39a531" name="meta-qt5" path="sources/meta-qt5" />
 
-  <project remote="fsl-release" name="meta-fsl-bsp-release" path="sources/meta-fsl-bsp-release" revision="krogoth_4.1.y">
+  <project remote="fsl-release" name="meta-fsl-bsp-release" path="sources/meta-fsl-bsp-release" revision="nxp/krogoth_4.1.y">
      <copyfile src="imx/tools/fsl-setup-release.sh" dest="fsl-setup-release.sh"/>
      <copyfile src="imx/README" dest="README-IMXBSP"/>
   </project>
 
-  <project remote="fsl-stash" name="meta-avs-demos" path="sources/meta-avs-demos" revision="imx7d-pico-avs-sdk_4.1.15-1.0.0">
+  <project remote="fsl-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="nxp/imx7d-pico-avs-sdk_4.1.15-1.0.0">
      <copyfile src="tools/avs-setup-demo.sh" dest="avs-setup-demo.sh"/>
      <copyfile src="README" dest="README-AVS-DEMO"/>
   </project>
