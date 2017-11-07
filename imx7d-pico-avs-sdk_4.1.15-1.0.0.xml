@@ -9,6 +9,7 @@
   <remote fetch="git://github.com/OSSystems" name="OSSystems"/>
   <remote fetch="git://github.com/meta-qt5"  name="QT5"/>
   <remote fetch="https://source.codeaurora.org/external/imx" name="fsl-release" />
+  <remote fetch="https://source.codeaurora.org/external/imxsupport" name="avs-release" />
 
   <project remote="yocto" revision="f5da2a5913319ad6ac2141438ba1aa17576326ab" name="poky" path="sources/poky"/>
   <project remote="yocto" revision="be78894e4682f111575470fb23e51e6ba523508d" name="meta-fsl-arm" path="sources/meta-fsl-arm"/>
@@ -31,7 +32,7 @@
      <copyfile src="imx/README" dest="README-IMXBSP"/>
   </project>
 
-  <project remote="fsl-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="nxp/imx7d-pico-avs-sdk_4.1.15-1.0.0">
+  <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="nxp/imx7d-pico-avs-sdk_4.1.15-1.0.0">
      <copyfile src="tools/avs-setup-demo.sh" dest="avs-setup-demo.sh"/>
      <copyfile src="README" dest="README-AVS-DEMO"/>
   </project>
