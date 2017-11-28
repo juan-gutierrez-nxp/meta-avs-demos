@@ -9,6 +9,7 @@
     "authDelegate":{
         "clientSecret":"SDK_CONFIG_CLIENT_SECRET",
         "deviceSerialNumber":"123456",
+        "refreshToken":"{SDK_CONFIG_REFRESH_TOKEN}",
         "clientId":"SDK_CONFIG_CLIENT_ID",
         "productId":"SDK_CONFIG_DEVICE_TYPE_ID"
     },

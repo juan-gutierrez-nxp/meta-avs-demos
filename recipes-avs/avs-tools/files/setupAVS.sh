@@ -1,5 +1,6 @@
 AVS_CONF="/etc/alexa_sdk/avs.conf"
 SENSORY_FILE="/usr/lib/sensory-alexa/lib/libsnsr.a"
+NO_SENSORY_REQUIRED="/etc/alexa_sdk/no_sensory"
 
 while [ ! -d "/etc/alexa_sdk/booted" ]
 do
@@ -9,31 +10,40 @@ do
  echo " Let's setup your environemt...                                        "
  echo ""
  echo " ** Please enable the Network access by Ethernet/Wifi **               "
+ if [ -e $NO_SENSORY_REQUIRED ]
+ then
+ echo ""
+ else
  echo ""
  echo " For using Wake Word Detection, please, accept the Sensory license...  "
+ fi
  echo ""
  echo "====================================================================== "
  echo ""
  echo ""
- if [ ! -d "/etc/alexa_sdk/sensory" ]
+ 
+ if [ !  -e $NO_SENSORY_REQUIRED ]
  then
-  /home/root/Alexa_SDK/Scripts/renewSensoryLicense.sh
-  if [ -e $SENSORY_FILE ]
+  if [ ! -d "/etc/alexa_sdk/sensory" ]
   then
-   mkdir /etc/alexa_sdk/sensory
-   sleep 2
-  else
-   echo ""
-   echo ""
-   echo " ==========================  WARNING  ================================= "
-   echo " By not accepting the Sensory license you will not able to use AVS       "
-   echo " with Wake Word Detection.                                              "
-   echo " You can always accept/renew Sensory license by running the following:  "
-   echo ""
-   echo "      $ /home/root/Alexa_SDK/Scripts/renewSensoryLicense.sh                 "
-   echo ""
-   echo " ==========================  WARNING  ================================= "
-   sleep 4
+   /home/root/Alexa_SDK/Scripts/renewSensoryLicense.sh
+   if [ -e $SENSORY_FILE ]
+   then
+    mkdir /etc/alexa_sdk/sensory
+    sleep 2
+   else
+    echo ""
+    echo ""
+    echo " ==========================  WARNING  ================================= "
+    echo " By not accepting the Sensory license you will not able to use AVS       "
+    echo " with Wake Word Detection.                                              "
+    echo " You can always accept/renew Sensory license by running the following:  "
+    echo ""
+    echo "      $ /home/root/Alexa_SDK/Scripts/renewSensoryLicense.sh                 "
+    echo ""
+    echo " ==========================  WARNING  ================================= "
+    sleep 4
+   fi
   fi
  fi
  echo ""
