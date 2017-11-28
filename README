@@ -18,10 +18,10 @@ Review the instructions under Chapter 3 of the **i.MX_Yocto_Project_User's_Guide
 Create/Move to a directory where you want to install the AVS yocto build enviroment.
 Let's call this as <yocto_dir>
 
-	--------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------
 	$ cd <yocto_dir>
-	$ repo init -u https://source.codeaurora.org/external/imx/meta-avs-demos -b master -m imx7d-pico-avs-sdk_4.1.15-1.0.0.xml
-	--------------------------------------------------------------------------------------------------------------
+	$ repo init -u https://source.codeaurora.org/external/imxsupport/meta-avs-demos -b nxp/master -m imx7d-pico-avs-sdk_4.1.15-1.0.0.xml
+	------------------------------------------------------------------------------------------------------------------------------------
 
 #### Download the AVS BSP build environment:
 
