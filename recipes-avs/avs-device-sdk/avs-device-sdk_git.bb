@@ -18,7 +18,7 @@ SRC_URI[melodic01short.md5sum] = "fa0a26a6ec836974d853631e26036ed3"
 SRC_URI[melodic02tth.md5sum] = "0c943e4d49907bb345277656c37e55db"
 SRC_URI[melodic02short.md5sum] = "4638324a21d6264f0dc2c6d586371da8"
 
-SRCREV = "${AUTOREV}"
+SRCREV = "21b926592eef51ff8038d53a5259faabed55300b"
 
 S = "${WORKDIR}/git" 
 SB = "${WORKDIR}/build/"
@@ -51,6 +51,11 @@ DEPENDS = " \
 	gstreamer1.0-libav \
 "
 
+do_compile() {
+    cd ${SB}
+    make SampleApp
+}
+
 do_install() {
     install -d -m 0755 ${D}${AVS_DIR}
     install -d -m 0755 ${D}/sounds
@@ -63,27 +68,30 @@ do_install() {
     cp  ${WORKDIR}/med_system_alerts_melodic_02._TTH_.mp3 ${D}/sounds/timer_normal.mp3
     cp  ${WORKDIR}/med_system_alerts_melodic_02_short._TTH_.wav ${D}/sounds/timer_short.wav
 
-	cd ${D}/${AVS_DIR}/
-	git clone git://github.com/alexa/avs-device-sdk.git avs-device-sdk
+    cd ${D}/${AVS_DIR}/
+
+    cp -r ${S}/* avs-device-sdk/
 
 	cd ${D}/${AVS_DIR}/avs-sdk-client/
 
    find -type f ! \( -name "*.so" -o -name "*.o" -o -name "*internal" -o -name "*cache" -o -name "SampleApp" -o -name "*.py" \) -exec rm {} \;
-   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${TMPDIR}/work/cortexa7hf-neon-poky-linux-gnueabi/avs-device-sdk/git-r0/git#/home/root/Alexa_SDK/avs-device-sdk#g -i {} \;
-   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${TMPDIR}/sysroots/imx7d-pico##g -i {} \;
-   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${TMPDIR}/work/cortexa7hf-neon-poky-linux-gnueabi/avs-device-sdk/git-r0/build#/home/root/Alexa_SDK/avs-sdk-client#g -i {} \;
-   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${TMPDIR}/work/cortexa7hf-neon-poky-linux-gnueabi/avs-device-sdk/git-r0/image##g -i {} \;
-   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#/${TMPDIR}/sysroots/x86_64-linux/usr/bin/arm-poky-linux-gnueabi#/usr/bin#g -i {} \;
-   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#/${TMPDIR}/sysroots/x86_64-linux/usr/bin#/usr/bin#g -i {} \;
+   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${WORKDIR}/git#/home/root/Alexa_SDK/avs-device-sdk#g -i {} \;
+   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${PKG_CONFIG_SYSROOT_DIR}##g -i {} \;
+   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${WORKDIR}/build#/home/root/Alexa_SDK/avs-sdk-client#g -i {} \;
+   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${WORKDIR}/image##g -i {} \;
+   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${STAGING_BINDIR_TOOLCHAIN}#/usr/bin#g -i {} \;
+   find -type f \( -name "*internal" -o -name "*cache" -o -name "*.py" \) -exec sed -e s#${STAGING_BINDIR_NATIVE}#/usr/bin#g -i {} \;
 
-	chrpath -r "${AVS_DIR}/avs-sdk-client/ApplicationUtilities/DefaultClient/src:${AVS_DIR}/avs-sdk-client/AuthDelegate/src:${AVS_DIR}/avs-sdk-client/MediaPlayer/src:${AVS_DIR}/avs-sdk-client/KWD/Sensory/src:${AVS_DIR}/avs-sdk-client/ACL/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/AIP/src:${AVS_DIR}/avs-sdk-client/ADSL/src:${AVS_DIR}/avs-sdk-client/AFML/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/Alerts/src:${AVS_DIR}/avs-sdk-client/CertifiedSender/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/PlaybackController/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/SpeakerManager/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/SpeechSynthesizer/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/Settings/src:${AVS_DIR}/avs-sdk-client/Storage/SQLiteStorage/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/TemplateRuntime/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/AudioPlayer/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/System/src:${AVS_DIR}/avs-sdk-client/ContextManager/src:${AVS_DIR}/avs-sdk-client/PlaylistParser/src:${AVS_DIR}/avs-sdk-client/KWD/src:${AVS_DIR}/avs-sdk-client/AVSCommon"  ${D}/${AVS_DIR}/avs-sdk-client/SampleApp/src/SampleApp
+
+    chrpath -r "${AVS_DIR}/avs-sdk-client/ApplicationUtilities/DefaultClient/src:${AVS_DIR}/avs-sdk-client/AuthDelegate/src:${AVS_DIR}/avs-sdk-client/MediaPlayer/src:${AVS_DIR}/avs-sdk-client/KWD/Sensory/src:${AVS_DIR}/avs-sdk-client/ACL/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/AIP/src:${AVS_DIR}/avs-sdk-client/ADSL/src:${AVS_DIR}/avs-sdk-client/AFML/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/Alerts/src:${AVS_DIR}/avs-sdk-client/CertifiedSender/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/PlaybackController/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/SpeakerManager/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/SpeechSynthesizer/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/Settings/src:${AVS_DIR}/avs-sdk-client/Storage/SQLiteStorage/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/TemplateRuntime/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/AudioPlayer/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/System/src:${AVS_DIR}/avs-sdk-client/ContextManager/src:${AVS_DIR}/avs-sdk-client/PlaylistParser/src:${AVS_DIR}/avs-sdk-client/KWD/src:${AVS_DIR}/avs-sdk-client/KWD/Pryon/src" ${D}/${AVS_DIR}/avs-sdk-client/SampleApp/src/SampleApp
 
     chrpath -r "${AVS_DIR}/avs-sdk-client/ACL/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/AIP/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/Alerts/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/SpeechSynthesizer/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/AudioPlayer/src:${AVS_DIR}/avs-sdk-client/CapabilityAgents/System/src:${AVS_DIR}/avs-sdk-client/ContextManager/src:${AVS_DIR}/avs-sdk-client/ADSL/src:${AVS_DIR}/avs-sdk-client/AFML/src:${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/ApplicationUtilities/DefaultClient/src/libDefaultClient.so
-    chrpath -r "${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/KWD/src/libKWD.so
     chrpath -r "${AVS_DIR}/avs-sdk-client/PlaylistParser/src:${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/MediaPlayer/src/libMediaPlayer.so
     chrpath -r "${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/AuthDelegate/src/libAuthDelegate.so
     chrpath -r "${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/ContextManager/src/libContextManager.so
-    chrpath -r "${AVS_DIR}/avs-sdk-client/ACL/src:${AVS_DIR}/avs-sdk-client/AuthDelegate/src:${AVS_DIR}/avs-sdk-client/AVSCommon" ${D}/${AVS_DIR}/avs-sdk-client/Integration/src/libIntegration.so
+
+#    chrpath -r "${AVS_DIR}/avs-sdk-client/ACL/src:${AVS_DIR}/avs-sdk-client/AuthDelegate/src:${AVS_DIR}/avs-sdk-client/AVSCommon" ${D}/${AVS_DIR}/avs-sdk-client/Integration/src/libIntegration.so
+
     chrpath -r "${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/Storage/SQLiteStorage/src/libSQLiteStorage.so
     chrpath -r "${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/ACL/src/libACL.so
     chrpath -r "${AVS_DIR}/avs-sdk-client/AVSCommon:" ${D}/${AVS_DIR}/avs-sdk-client/ADSL/src/libADSL.so
