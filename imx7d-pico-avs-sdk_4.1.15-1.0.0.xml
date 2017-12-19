@@ -32,7 +32,7 @@
      <copyfile src="imx/README" dest="README-IMXBSP"/>
   </project>
 
-  <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="nxp/imx7d-pico-avs-sdk_4.1.15-1.0.0">
+  <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="imx7d-pico-avs-sdk_4.1.15-1.0.0">
      <copyfile src="tools/avs-setup-demo.sh" dest="avs-setup-demo.sh"/>
      <copyfile src="README" dest="README-AVS-DEMO"/>
   </project>
