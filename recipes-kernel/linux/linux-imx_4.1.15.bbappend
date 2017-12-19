@@ -3,7 +3,7 @@
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-KERNEL_SRC = "git://github.com/TechNexion/linux.git;protocol=git"
+KERNEL_SRC = "git://github.com/TechNexion/linux.git;protocol=https"
 SRCBRANCH = "tn-imx_4.1.15_2.0.0_ga"
 SRCREV = "d2e98efca60e21ad1b835f0960b5d86009356d69"
 
