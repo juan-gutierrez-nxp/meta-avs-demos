@@ -53,6 +53,7 @@ IMAGE_INSTALL_append = " flac"
 IMAGE_INSTALL_append = " python-pip"
 IMAGE_INSTALL_append = " cmake"
 IMAGE_INSTALL_append = " putty"
+IMAGE_INSTALL_append = " ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'xdotool', '', d)}"
 
 
 LICENSE_FLAGS_WHITELIST = "commercial_gst-fluendo-mp3 \
