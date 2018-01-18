@@ -251,6 +251,11 @@ if [ $BUILD_CONEXANT == 1 ]; then
     echo "#Enable the Conexant Sound Card" >> $BUILD_DIR/conf/local.conf
     echo "MACHINEOVERRIDES =. \"imx7d-pico-conexant:\"" >> $BUILD_DIR/conf/local.conf
     echo "" >> $BUILD_DIR/conf/local.conf
+else
+	echo "" >> $BUILD_DIR/conf/local.conf
+	echo "#Enable the SGTL Sound Card" >> $BUILD_DIR/conf/local.conf
+	echo "MACHINEOVERRIDES =. \"imx7d-pico-sgtl:\"" >> $BUILD_DIR/conf/local.conf
+	echo "" >> $BUILD_DIR/conf/local.conf
 fi
 
 echo "LICENSE_FLAGS_WHITELIST ?= \"commercial_gst-fluendo-mp3 \\" >> $BUILD_DIR/conf/local.conf
