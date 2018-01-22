@@ -92,8 +92,23 @@ and WiFi/BT not enabled.
 
 Go to your <build_sdk> directory and start the build of the avs-image
 
+There are 2 options
+
+- Regular Build:
+
     $ cd  <yocto_dir>/<build_sdk>
     $ bitbake avs-image
+
+
+- With QT5 support included:
+
+    $ cd  <yocto_dir>/<build_sdk>
+    $ bitbake avs-image-qt5
+
+
+The image with QT5 is useful if you want to add some GUI for example to render
+DisplayCards.
+
 ---
 
 ### Step 4 : Deploying the built images to SD/MMC card to boot on target board.
@@ -102,7 +117,8 @@ After a build has succesfully completed, the created image resides at
 
     <build_sdk>/tmp/deploy/images/imx7d-pico/
 
-In this directory, you will find the **imx7d-pico-avs.sdcard** image.
+In this directory, you will find the **imx7d-pico-avs.sdcard** image or
+**imx7d-pico-avs-qt5.sdcard**, depending on the build you chose on Step3.
 
 To Flash the .sdcard image into the eMMC device of your PicoPi board follow the
 next steps:
