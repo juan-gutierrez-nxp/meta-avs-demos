@@ -49,3 +49,7 @@ QT5_IMAGE_INSTALL_remove = " packagegroup-qt5-webengine"
 IMAGE_INSTALL += " \
 ${QT5_IMAGE_INSTALL} \
 "
+
+export IMAGE_BASENAME = "avs-qt5"
+IMAGE_NAME = "${MACHINE}-${IMAGE_BASENAME}-${DATETIME}"
+IMAGE_LINK_NAME = "${MACHINE}-${IMAGE_BASENAME}"
