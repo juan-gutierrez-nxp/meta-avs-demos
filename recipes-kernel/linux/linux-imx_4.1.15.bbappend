@@ -8,15 +8,17 @@ SRCBRANCH = "tn-imx_4.1.15_2.0.0_ga"
 SRCREV = "d2e98efca60e21ad1b835f0960b5d86009356d69"
 
 SRC_URI += " \
-	file://0001-Enable-SND_USB_AUDIO.patch \
-	file://0001-tn_imx_defconfig-Enable-Poxis-MQUEUE.patch \
 "
 
 SRC_URI_append_imx7d-pico-sgtl += " \
+	file://0001-Enable-SND_USB_AUDIO.patch \
+	file://0001-tn_imx_defconfig-Enable-Poxis-MQUEUE.patch \
 	file://0001-Set-the-right-clk-provider-of-SYS_MCLK-for-SGTL-code.patch \
 "
 
 SRC_URI_append_imx7d-pico-conexant += " \
+	file://0001-Enable-SND_USB_AUDIO.patch \
+	file://0001-tn_imx_defconfig-Enable-Poxis-MQUEUE.patch \
     file://0001-Set-the-right-clk-provider-of-SYS_MCLK-for-SGTL-code.patch \
 "
 
@@ -28,7 +30,7 @@ do_copy_defconfig () {
 
 do_compile () {
 	make tn_imx_defconfig
-	make all
+	make ${PARALLEL_MAKE} all
 	make dtbs
 }
 
