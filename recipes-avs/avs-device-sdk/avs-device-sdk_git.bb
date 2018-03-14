@@ -18,7 +18,7 @@ SRC_URI[melodic01short.md5sum] = "fa0a26a6ec836974d853631e26036ed3"
 SRC_URI[melodic02tth.md5sum] = "0c943e4d49907bb345277656c37e55db"
 SRC_URI[melodic02short.md5sum] = "4638324a21d6264f0dc2c6d586371da8"
 
-SRCREV = "56c26e85888992f2a78f685d26295c14d9c87718"
+SRCREV = "6a4f9f01361ea095e4fd64fb85de38452113fe1b"
 #SRCREV = "${AUTOREV}"
 
 INSANE_SKIP_${PN} = "dev-so"
@@ -56,7 +56,7 @@ DEPENDS = " \
 
 do_compile() {
     cd ${SB}
-    make SampleApp
+    make ${PARALLEL_MAKE} SampleApp
 }
 
 do_install() {
