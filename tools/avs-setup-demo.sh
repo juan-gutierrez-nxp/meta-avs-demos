@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 CWD=`pwd`
+BSPDIR=$CWD
 PROGNAME="setup-environment"
 exit_message ()
 {
@@ -163,6 +164,7 @@ BUILD_DIR=.
 
 if [ ! -e $BUILD_DIR/conf/local.conf ]; then
     echo -e "\n ERROR - No build directory is set yet. Run the 'setup-environment' script before running this script to create " $BUILD_DIR
+
     echo -e "\n"
     return 1
 fi
@@ -213,50 +215,101 @@ sed -e "s,PACKAGECONFIG_append_pn-nativesdk-qemu = \" sdl\",,g" -i $BUILD_DIR/co
 
 echo ""
 
-BUILD_CONEXANT=0
-if [ $BUILD_CONEXANT == 0 ]; then
-	while true; do
-		read -p "Are you going to use Conexant Sound Card [Y/N]? " usrInput
-		case $usrInput in
-			[Yy]* ) BUILD_CONEXANT=1; break;;
-			[Nn]* ) BUILD_CONEXANT=0; break;;
-			* ) echo "Please answer yes or no.";;
-		esac
-	done
-	echo ""
-else
-	echo "The SGTL Sound Card will be used..."
-fi
+SOUNDCARD="SGTL"
+while true; do
+    echo " Which Sound Card are you going to use? "
+    echo ""
+    echo " Sigmatel ..........................  1"
+    echo " Synaptics/Conexant ................  2"
+    echo ""
+    read -p "Type the number of your selection and press Enter... " usrInput
+    case $usrInput in
+        [1]* ) SOUNDCARD="SGTL" break;;
+        [2]* ) SOUNDCARD="CONEXANT"; break;;
+           * ) ;;
+    esac
+done
+
 
 BUILD_ALEXA_SDK=0
+ALEXA_VERSION=`cat $BSPDIR/sources/meta-avs-demos/version.txt`
 while true; do
-	read -p "Do you want to build/include the AVS_SDK package on this image(Y/N)? " usrInput
-	case $usrInput in
+    echo ""
+    read -p "Do you want to build/include the Alexa SDK package on this image(Y/N)? " usrInput
+    case $usrInput in
         [Yy]* ) BUILD_ALEXA_SDK=1; break;;
         [Nn]* ) BUILD_ALEXA_SDK=0; break;;
-    	    * ) echo "Please answer yes or no.";;
-	esac
+            * ) echo "Please answer yes or no.";;
+    esac
 done
+
+
+
+BUILD_WIFI=0
+while true; do
+    echo ""
+    read -p "Do you want to include WiFi support on this image(Y/N)? " usrInput
+    case $usrInput in
+        [Yy]* ) BUILD_WIFI=1; break;;
+        [Nn]* ) BUILD_WIFI=0; break;;
+            * ) echo "Please answer yes or no.";;
+    esac
+done
+
+
+if [ $BUILD_WIFI == 1 ]; then
+   if [ ! -d ${BSPDIR}/sources/meta-avs-picopi-wifi ]; then
+       BUILD_WIFI=0
+       RED='\033[0;31m'
+       NC='\033[0m' # No Color
+       echo -e "${RED}"
+       echo "============================================================= "
+       echo " WARNING: meta-avs-picopi-wifi layer needs to be included on  "
+       echo " the sources directory to be able to include WiFi Support     "
+       echo " on this image. Please Contact NXP to get the meta layer.     "
+       echo "============================================================= "
+       echo -e "${NC}"
+    else
+       echo "BBLAYERS += \" \${BSPDIR}/sources/meta-avs-picopi-wifi \"" >> $BUILD_DIR/conf/bblayers.conf
+    fi
+fi
+
 
 if [ $BUILD_ALEXA_SDK == 1 ]; then
     echo "" >> $BUILD_DIR/conf/local.conf
-	echo "#Enable Building of AVS_SDK and install AVS Scripts" >> $BUILD_DIR/conf/local.conf
+    echo "#Enable Building of AVS_SDK and install AVS Scripts" >> $BUILD_DIR/conf/local.conf
     echo "IMAGE_INSTALL_append = \" avs-device-sdk\"" >> $BUILD_DIR/conf/local.conf
-	echo "IMAGE_INSTALL_append = \" avs-tools\"" >> $BUILD_DIR/conf/local.conf
+    echo "IMAGE_INSTALL_append = \" avs-tools\"" >> $BUILD_DIR/conf/local.conf
+    echo "" >> $BUILD_DIR/conf/local.conf
+    echo "#Alexa Version" >> $BUILD_DIR/conf/local.conf
+    echo "SDKVERSION = \"$ALEXA_VERSION\"" >> $BUILD_DIR/conf/local.conf
     echo "" >> $BUILD_DIR/conf/local.conf
 fi
 
-if [ $BUILD_CONEXANT == 1 ]; then
+if [ $SOUNDCARD == "CONEXANT" ]; then
     echo "" >> $BUILD_DIR/conf/local.conf
     echo "#Enable the Conexant Sound Card" >> $BUILD_DIR/conf/local.conf
     echo "MACHINEOVERRIDES =. \"imx7d-pico-conexant:\"" >> $BUILD_DIR/conf/local.conf
+    echo "SOUNDCARD = \"synaptics\"" >> $BUILD_DIR/conf/local.conf
     echo "" >> $BUILD_DIR/conf/local.conf
-else
-	echo "" >> $BUILD_DIR/conf/local.conf
-	echo "#Enable the SGTL Sound Card" >> $BUILD_DIR/conf/local.conf
-	echo "MACHINEOVERRIDES =. \"imx7d-pico-sgtl:\"" >> $BUILD_DIR/conf/local.conf
-	echo "" >> $BUILD_DIR/conf/local.conf
 fi
+
+if [ $SOUNDCARD == "SGTL" ]; then
+    echo "" >> $BUILD_DIR/conf/local.conf
+    echo "#Enable the SGTL Sound Card" >> $BUILD_DIR/conf/local.conf
+    echo "MACHINEOVERRIDES =. \"imx7d-pico-sgtl:\"" >> $BUILD_DIR/conf/local.conf
+    echo "SOUNDCARD = \"sgtl\"" >> $BUILD_DIR/conf/local.conf
+    echo "" >> $BUILD_DIR/conf/local.conf
+fi
+
+
+if [ $BUILD_WIFI == 1 ]; then
+    echo "" >> $BUILD_DIR/conf/local.conf
+    echo "#Enable the BCMD WiFi" >> $BUILD_DIR/conf/local.conf
+    echo "IMAGE_INSTALL_append = \" firmware-bcmdhd\"" >> $BUILD_DIR/conf/local.conf
+    echo "" >> $BUILD_DIR/conf/local.conf
+fi
+
 
 echo "LICENSE_FLAGS_WHITELIST ?= \"commercial_gst-fluendo-mp3 \\" >> $BUILD_DIR/conf/local.conf
 echo "                             commercial_gst-openmax \\" >> $BUILD_DIR/conf/local.conf
@@ -298,27 +351,35 @@ echo "" >> $BUILD_DIR/conf/local.conf
 
 
 echo ""
-echo "========================================================== "
-echo " AVS configuration is now ready at conf/local.conf         "
-echo "                                                           "
-if [ $BUILD_CONEXANT == 1 ]; then
-echo " - Sound Card = Conexant									 "
-else
-echo " - Sound Card = SGTL                                       "
+echo "============================================================ "
+echo " AVS configuration is now ready at conf/local.conf           "
+echo "                                                             "
+if [ $SOUNDCARD == "CONEXANT" ]; then
+echo " - Sound Card = Synaptics                                    "
+fi
+if [ $SOUNDCARD == "SGTL" ]; then
+echo " - Sound Card = Sigmatel                                     "
 fi
 if [ $BUILD_ALEXA_SDK == 1 ]; then
-echo " - AVS_SDK pre-installed                                   "
+echo " - Alexa SDK $ALEXA_VERSION pre-installed                    "
 else
-echo " - AVS_SDK is NOT installed                                "
-echo "  (All AVS_SDK pkg depends are included in the image.      "
-echo "   You can install it on runtime)	  					     "
+echo " - Alexa SDK is NOT installed                                "
+echo "   (All Alexa SDK pkg dependencies are included in the image."
+echo "   You can install it on runtime)                            "
 fi
-echo "															 "
-echo " You are ready to bitbake your AVS demo image now:         "
-echo "                                                           "
-echo "     bitbake avs-image                                     "
-echo "															 "
-echo "========================================================== "
+if [ $BUILD_WIFI == 1 ]; then
+echo " - Wifi supported                                            "
+fi
+echo ""
+echo " You are ready to bitbake your AVS demo image now:           "
+echo "                                                             "
+echo "     bitbake avs-image                                       "
+echo ""
+echo " If you want to use QT5DisplayCards, use then:               "
+echo ""
+echo "     bitbake avs-image-qt5"
+echo "                                                             "
+echo "============================================================ "
 echo ""
 
 cd  $BUILD_DIR
