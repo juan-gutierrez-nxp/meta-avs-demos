@@ -44,10 +44,16 @@ The following Sound Cards are supported on the build:
 * SGTL (In-board Audio Codec for PicoPi)
 * 2-Mic Conexant
 
-The script will prompt if you are going to use the Conexant Card. If not then
-SGTL will be assumed as your selection
+The script will prompt to select the soundcard you will be using:
 
-    Are you going to use Conexant Sound Card [Y/N]?
+
+    Which Sound Card are you going to use?
+
+    Sigmatel ..........................  1
+    Synaptics/Conexant ................  2
+
+    Type the number of your selection and press Enter...
+
 
 #### Install Alexa SDK
 
@@ -64,6 +70,18 @@ If your selection was **NO**, then you can always manually fetch and build the
 AVS_SDK on runtime. All the packages dependencies will be already there, so
 only fetching the AVS_SDK source code and building it is required.
 
+#### Install WiFi support
+
+Te WiFi support is optional and requires to get from NXP an additional meta-avs-demos-wifi layer.
+Contact NXP to get this layer to be able to support WiFi on your image
+
+The image will prompt:
+
+    Do you want to include WiFi support on this image(Y/N)?
+
+
+Select **YES** if you already have the complementary meta-avs-demos-wifi layer
+
 
 #### Finish avs-image configuration
 
@@ -73,18 +91,22 @@ your image build.
 Next is an example for a Preinstalled AVS_SDK with Conxant Sound Card support
 and WiFi/BT not enabled.
 
-    ==========================================================
+    ============================================================
      AVS configuration is now ready at conf/local.conf
 
-     - Sound Card = Conexant
-     - AVS_SDK pre-installed
+     - Sound Card = Sigmatel
+     - Alexa SDK 1.6 pre-installed
+     - Wifi supported
 
      You are ready to bitbake your AVS demo image now:
 
-        bitbake avs-image
+         bitbake avs-image
 
-    ==========================================================
+     If you want to use QT5DisplayCards, use then:
 
+         bitbake avs-image-qt5
+
+    ============================================================
 
 ---
 
@@ -96,14 +118,14 @@ There are 2 options
 
 - Regular Build:
 
-    $ cd  <yocto_dir>/<build_sdk>
-    $ bitbake avs-image
+        $ cd  <yocto_dir>/<build_sdk>
+        $ bitbake avs-image
 
 
 - With QT5 support included:
 
-    $ cd  <yocto_dir>/<build_sdk>
-    $ bitbake avs-image-qt5
+        $ cd  <yocto_dir>/<build_sdk>
+        $ bitbake avs-image-qt5
 
 
 The image with QT5 is useful if you want to add some GUI for example to render
@@ -130,12 +152,12 @@ flashing mode.
 
 - Copy the built SDCARD file
 
-    $ sudo dd if=imx7d-pico-avs.sdcard of=/dev/sd<partition> bs=1M && sync
-    $ sync
+        $ sudo dd if=imx7d-pico-avs.sdcard of=/dev/sd<partition> bs=1M && sync
+        $ sync
 
 - Properly eject the pico-imx7d board:
 
-    $ sudo eject /dev/sd<partition>
+        $ sudo eject /dev/sd<partition>
 
 ---
 
