@@ -1,7 +1,7 @@
-From 372ff3498f2fa6a554920f005b28511c31829892 Mon Sep 17 00:00:00 2001
+From 2ac25048e08f8ce1ddd2522d1cf02cbd2d584e35 Mon Sep 17 00:00:00 2001
 From: Juan Gutierrez <juan.gutierrez@nxp.com>
-Date: Thu, 11 Jan 2018 16:27:59 +0000
-Subject: [PATCH] tn_imx_defconfig: Enable Poxis MQUEUE
+Date: Mon, 2 Apr 2018 18:49:37 -0500
+Subject: [PATCH] tmx_defconfig: Enable Poxis MQUEUE
 
 This is allow messaging between process using MQUEUE
 
@@ -11,15 +11,15 @@ Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/arch/arm/configs/tn_imx_defconfig b/arch/arm/configs/tn_imx_defconfig
-index 47903f9..7756b3b 100644
+index 702fac6..4a6b7e1 100644
 --- a/arch/arm/configs/tn_imx_defconfig
 +++ b/arch/arm/configs/tn_imx_defconfig
-@@ -426,3 +426,5 @@ CONFIG_CRYPTO_AES_ARM=y
+@@ -438,3 +438,5 @@ CONFIG_CRYPTO_AES_ARM=y
  # CONFIG_XZ_DEC_IA64 is not set
  # CONFIG_XZ_DEC_SPARC is not set
  CONFIG_FONTS=y
 +CONFIG_POSIX_MQUEUE=y
 +CONFIG_POSIX_MQUEUE_SYSCTL=y
 -- 
-1.9.1
+2.7.4
 
