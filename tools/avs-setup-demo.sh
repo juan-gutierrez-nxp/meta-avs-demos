@@ -136,21 +136,47 @@ if [ -z "$MACHINE" ]; then
     MACHINE='imx6qsabresd'
 fi
 
-# New machine definitions may need to be added to the expected location
-if [ -d ./sources/meta-freescale ]; then
-   cp -r sources/meta-fsl-bsp-release/imx/meta-bsp/conf/machine/* sources/meta-freescale/conf/machine
-else
-   cp -r sources/meta-fsl-bsp-release/imx/meta-bsp/conf/machine/* sources/meta-fsl-arm/conf/machine
-fi
-
 # copy new EULA into community so setup uses latest i.MX EULA
-if [ -d ./sources/meta-freescale ]; then
-   cp sources/meta-fsl-bsp-release/imx/EULA.txt sources/meta-freescale/EULA
-   cp sources/meta-fsl-bsp-release/imx/classes/fsl-eula-unpack.bbclass sources/meta-freescale/classes
-else
-   cp sources/meta-fsl-bsp-release/imx/EULA.txt sources/meta-fsl-arm/EULA
-   cp sources/meta-fsl-bsp-release/imx/classes/fsl-eula-unpack.bbclass sources/meta-fsl-arm/classes
-fi
+cp sources/meta-fsl-bsp-release/imx/EULA.txt sources/meta-freescale/EULA
+
+# Delete upstream machine and bbclass files that we have modified
+machine_roots="sources/meta-fsl-bsp-release/imx/meta-bsp/conf/machine"
+for machine_root in $machine_roots; do
+   if [ -d $machine_root ]; then
+      machines="$machines $machine_root/*"
+      machine_includes="$machine_includes $machine_root/include/*"
+   fi
+done
+for machine in $machines; do
+   if [ -f $machine ]; then
+      upstream_machine=sources/meta-freescale/conf/machine/`basename $machine`
+      if [ -f $upstream_machine ]; then
+         rm $upstream_machine
+      fi
+   fi
+done
+for machine_include in $machine_includes; do
+   if [ -f $machine_include ]; then
+      upstream_machine_include=sources/meta-freescale/conf/machine/include/`basename $machine_include`
+      if [ -f $upstream_machine_include ]; then
+         rm $upstream_machine_include
+      fi
+   fi
+done
+bbclass_roots="sources/meta-fsl-bsp-release/imx/meta-bsp/classes"
+for bbclass_root in $bbclass_roots; do
+   if [ -d $bbclass_root ]; then
+      bbclasses="$bbclasses $bbclass_root/*"
+   fi
+done
+for bbclass in $bbclasses; do
+   if [ -f $bbclass ]; then
+      upstream_bbclass=sources/meta-freescale/classes/`basename $bbclass`
+      if [ -f $upstream_bbclass ]; then
+         rm $upstream_bbclass
+      fi
+   fi
+done
 
 # Set up the basic yocto environment
 if [ -z "$DISTRO" ]; then
@@ -164,7 +190,6 @@ BUILD_DIR=.
 
 if [ ! -e $BUILD_DIR/conf/local.conf ]; then
     echo -e "\n ERROR - No build directory is set yet. Run the 'setup-environment' script before running this script to create " $BUILD_DIR
-
     echo -e "\n"
     return 1
 fi
@@ -336,17 +361,6 @@ echo "" >> $BUILD_DIR/conf/local.conf
 echo "#Rootfs size (Full eMMC - uboot/kernel partitions) = 3.5GB - 16MB" >> $BUILD_DIR/conf/local.conf
 echo "IMAGE_ROOTFS_SIZE = \"3333152\"" >> $BUILD_DIR/conf/local.conf
 echo "IMAGE_OVERHEAD_FACTOR = \"1.0\"" >> $BUILD_DIR/conf/local.conf
-echo "" >> $BUILD_DIR/conf/local.conf
-
-echo "#Mask the gstreamer paths (keep the other paths already masked)" >> $BUILD_DIR/conf/local.conf
-echo "BBMASK_forcevariable =\\" >> $BUILD_DIR/conf/local.conf
-echo "\"meta-fsl-arm/recipes-kernel/linux/linux-imx_4.1.15.bb\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-fsl-arm/recipes-kernel/linux/linux-imx-mfgtool_4.1.15.bb\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/recipes-multimedia/gstreamer/gstreamer1.0-plugins-bad_%.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-fsl-arm/qt5-layer/recipes-qt/qt5/qtbase_%.bbappend|meta-fsl-arm/recipes-bsp/firmware-imx\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-fsl-arm/recipes-graphics/images/core-image-weston.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-fsl-bsp-release/imx/meta-bsp/recipes-multimedia/gstreamer/\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-fsl-arm/recipes-multimedia/gstreamer/\"" >> $BUILD_DIR/conf/local.conf
 echo "" >> $BUILD_DIR/conf/local.conf
 
 
