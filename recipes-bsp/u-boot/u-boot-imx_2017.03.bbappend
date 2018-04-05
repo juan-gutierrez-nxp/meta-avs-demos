@@ -4,19 +4,17 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 UBOOT_SRC = "git://github.com/TechNexion/u-boot-edm.git;protocol=https"
-SRCBRANCH = "tn-imx_v2015.04_4.1.15_1.0.0_ga"
+SRCBRANCH = "tn-imx_v2017.03_4.9.11_1.0.0_ga_test"
 SRCREV = "${AUTOREV}"
 
-LOCALVERSION = "tn-imx_v2015.04_4.1.15_1.0.0_ga"
+LOCALVERSION = "tn-imx_v2017.03_4.9.11_1.0.0_ga_test"
 
 SRC_URI_append_imx7d-pico-sgtl += " \
-    file://0001-pico-imx7-set-baseboard-to-pico-pi-on-uboot-environm.patch \
+    file://pico-imx7-set-baseboard-to-pico-pi-on-uboot-environm.patch \
 "
 
 SRC_URI_append_imx7d-pico-conexant += " \
-    file://0001-pico-imx7-set-baseboard-to-pico-pi-on-uboot-environm.patch \
+    file://pico-imx7-set-baseboard-to-pico-pi-on-uboot-environm.patch \
 "
 
-
-
-COMPATIBLE_MACHINE = "(mx7)"
+COMPATIBLE_MACHINE = "(imx7d-pico)"
