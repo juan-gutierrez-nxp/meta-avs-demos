@@ -22,6 +22,7 @@ SRCREV = "6a4f9f01361ea095e4fd64fb85de38452113fe1b"
 #SRCREV = "${AUTOREV}"
 
 INSANE_SKIP_${PN} = "dev-so"
+TARGET_CC_ARCH += "${LDFLAGS}"
 
 S = "${WORKDIR}/git" 
 SB = "${WORKDIR}/build"
