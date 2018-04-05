@@ -21,6 +21,18 @@ do
  echo "====================================================================== "
  echo ""
  echo ""
+
+ timeout 10s udhcpc > /dev/null
+ if [ $? -eq 124 ]
+ then
+  echo "====================================================================== "
+  echo ""
+  echo " *** Fail to get a IP address ***"
+  echo " Please enable the Network access by Ethernet/Wifi                     "
+  echo ""
+  echo "====================================================================== "
+ exit 1
+ fi
  
  if [ !  -e $NO_SENSORY_REQUIRED ]
  then
