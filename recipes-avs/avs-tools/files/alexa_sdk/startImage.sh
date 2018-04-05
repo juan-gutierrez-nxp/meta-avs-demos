@@ -1,36 +1,5 @@
 SENSORY_FILE="/usr/lib/sensory-alexa/lib/libsnsr.a"
 
-if [ -f "/etc/alexa_sdk/firstBoot" ]
-then
-  sleep 4
-  echo ""
-  echo "================================================================================"
-  echo ""
-  echo " Welcome to NXP BSP Image for Alexa SDK"
-  echo ""
-  sleep 2
-  echo " This image contains libraries and packages which are covered by NXP's"
-  echo " End User License Agreement (EULA). To have the right to use these binaries"
-  echo " in this image, you need to read and accept the following..."
-  echo ""
-  echo ""
-  sleep 3
-  while :; do
-    fold -s -w `tput cols`  /etc/alexa_sdk/EULA_NXP.txt | more
-    echo ""
-    echo "Press Enter to continue ..."
-    while read -r -t 0; do read -r; done
-    echo ""
-    echo ""
-    read -p "Do you accept the EULA you just read? (y/n)" usrInput
-    case $usrInput in
-        [Yy]* )  rm /etc/alexa_sdk/firstBoot; break;;
-        [Nn]* )  ;;
-        * ) echo "Please answer yes or no.";;
-    esac
-  done
-fi
-
 echo ""
 echo "================================================================================"
 echo "................................................................................"
@@ -69,10 +38,9 @@ echo ""
   echo "================================================================================="
   echo " Welcome to NXP Pico Pi for AVS SDK                               "
   echo ""
+
 if [ ! -d "/etc/alexa_sdk/booted" ]
 then
-  echo ""
-  echo ""
   echo " To setup your AVS Environment:                                   "
   echo " - Go to Alexa_SDK directory and run the Setup AVS script:        "
   echo ""
