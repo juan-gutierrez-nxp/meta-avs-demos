@@ -24,7 +24,7 @@ SRCREV = "6a4f9f01361ea095e4fd64fb85de38452113fe1b"
 INSANE_SKIP_${PN} = "dev-so"
 TARGET_CC_ARCH += "${LDFLAGS}"
 
-S = "${WORKDIR}/git" 
+S = "${WORKDIR}/git"
 SB = "${WORKDIR}/build"
 
 AVS_DIR ?= "/home/root/Alexa_SDK"
@@ -42,6 +42,7 @@ EXTRA_OECMAKE = " \
 
 TARGET_CXXFLAGS += " -D_GLIBCXX_USE_CXX11_ABI=0 "
 
+RDEPENDS_${PN} += "bash"
 DEPENDS = " \
 	curl \
 	sqlite3 \
