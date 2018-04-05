@@ -1,4 +1,5 @@
 export DISPLAY=:0.0
+/home/root/Alexa_SDK/Scripts/setUTCTime.sh
 
 echo "============================================================ "
 echo " Now we will try to authenticate your AVS device             "

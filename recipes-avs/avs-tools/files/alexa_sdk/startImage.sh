@@ -1,3 +1,7 @@
+#!/bin/sh
+
+sleep 1
+
 SENSORY_FILE="/usr/lib/sensory-alexa/lib/libsnsr.a"
 
 echo ""

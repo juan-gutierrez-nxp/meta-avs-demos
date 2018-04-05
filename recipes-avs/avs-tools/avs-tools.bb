@@ -9,6 +9,8 @@ DEST_ETC_DIR ?= "/etc/alexa_sdk"
 DEST_SDK_DIR ?= "/home/root/Alexa_SDK" 
 DEST_SCRIPTS_DIR ?= "/home/root/Alexa_SDK/Scripts"
 
+inherit systemd
+
 SRC_URI = "file://alexa_sdk \
 		file://cleanAVSEnv.sh \
 		file://getAVSToken.sh \
@@ -16,6 +18,7 @@ SRC_URI = "file://alexa_sdk \
 		file://setCredentials.sh \
 		file://setupAVS.sh \
 		file://setUTCTime.sh \
+		file://startAVSImage.service \
 "
 
 do_install() {
@@ -24,9 +27,18 @@ do_install() {
     install ${S}/*.sh ${D}${DEST_SCRIPTS_DIR}
     install ${S}/alexa_sdk/* ${D}${DEST_ETC_DIR}
 
+    if ${@bb.utils.contains('DISTRO_FEATURES','systemd','true','false',d)}; then
+        install -d ${D}${systemd_unitdir}/system
+        install -m 644 ${WORKDIR}/*.service ${D}/${systemd_unitdir}/system
+    fi
+
 	cd ${D}/${DEST_SDK_DIR}
     ln -s ${DEST_SCRIPTS_DIR}/setupAVS.sh setupAVS.sh
 }
 
 FILES_${PN} = "${DEST_ETC_DIR} ${DEST_SCRIPTS_DIR} ${DEST_SDK_DIR}"
 BBCLASSEXTEND = "native"
+
+SYSTEMD_PACKAGES = "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '${PN}', '', d)}"
+SYSTEMD_SERVICE_${PN} = "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'startAVSImage.service', '', d)}"
+FILES_${PN} += "${systemd_unitdir}/system/startAVSImage.service"
