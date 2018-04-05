@@ -23,9 +23,9 @@ if [ -f /usr/bin/pulseaudio ]; then
 	mv /usr/bin/pulseaudio /usr/bin/pulseaudio.disabled
 fi
 
-if [ -f /etc/alexa_sdk/startImage.sh ]; then
-	/etc/alexa_sdk/startImage.sh
-fi
+# Enable Ethernet
+ifconfig eth0 up
+timeout 10s udhcpc > /dev/null
 
 exit 0
 
