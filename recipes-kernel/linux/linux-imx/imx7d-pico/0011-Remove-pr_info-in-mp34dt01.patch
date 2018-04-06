@@ -1,0 +1,81 @@
+From b48791dd4f34a06840ab615c1204e7d1959b2cd8 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Wed, 14 Feb 2018 18:41:36 +0000
+Subject: [PATCH 11/15] Remove pr_info in mp34dt01
+
+---
+ sound/soc/fsl/imx-mp34dt01.c | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/sound/soc/fsl/imx-mp34dt01.c b/sound/soc/fsl/imx-mp34dt01.c
+index be23610..bf275d4 100644
+--- a/sound/soc/fsl/imx-mp34dt01.c
++++ b/sound/soc/fsl/imx-mp34dt01.c
+@@ -59,8 +59,6 @@ static int imx_mp34dt01_startup(struct snd_pcm_substream *substream)
+ 		snd_soc_card_get_drvdata(soc_card);
+ 	int ret;
+ 
+-	pr_info("\n");
+-
+ 	ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
+ 			SNDRV_PCM_HW_PARAM_RATE, &imx_mp34dt01_rate_constraints);
+ 	if (ret)
+@@ -79,7 +77,6 @@ static void imx_mp34dt01_shutdown(struct snd_pcm_substream *substream)
+ 	struct snd_soc_card_drvdata_imx_tfa *drvdata =
+ 		snd_soc_card_get_drvdata(soc_card);
+ 
+-	pr_info("\n");
+ 	if (drvdata->mclk)
+ 		clk_disable_unprepare(drvdata->mclk);
+ }
+@@ -134,7 +131,6 @@ static int imx_mp34dt01_trigger(struct snd_pcm_substream *stream, int cmd)
+ 		snd_soc_card_get_drvdata(rtd->card);
+ 	int ret = 0;
+ 
+-	pr_info("\n");
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+ 		if (stream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+@@ -176,7 +172,6 @@ static int imx_mp34dt01_init(struct snd_soc_pcm_runtime *rtd)
+ 	struct snd_soc_card_drvdata_imx_tfa *data = snd_soc_card_get_drvdata(rtd->card);;
+ 	struct device *dev = rtd->card->dev;
+ 
+-	pr_info("\n");
+ 	dev_dbg(rtd->card->dev, "%s,%d: dai_init\n", __FUNCTION__, __LINE__);
+ 
+ 	return 0;
+@@ -186,7 +181,6 @@ static void *tfa_devm_kstrdup(struct device *dev, char *buf)
+ {
+ 	char *str = devm_kzalloc(dev, strlen(buf) + 1, GFP_KERNEL);
+ 
+-	pr_info("\n");
+ 	if (!str)
+ 		return str;
+ 	memcpy(str, buf, strlen(buf));
+@@ -250,7 +244,6 @@ static int imx_mp34dt01_probe(struct platform_device *pdev)
+ 	int ret = 0;
+ 	int i, num_codecs;
+ 
+-	pr_info("imx_mp34dt01_probe\n");
+ 
+ 	imx_mp34dt01_soc_card.dev = &pdev->dev;
+ 
+@@ -344,7 +337,6 @@ static int imx_mp34dt01_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
+ 
+-	pr_info("done\n");
+ 	return ret;
+ fail:
+ 	if (cpu_np)
+@@ -361,7 +353,6 @@ static int imx_mp34dt01_remove(struct platform_device *pdev)
+ 	struct snd_soc_card_drvdata_imx_tfa *drvdata =
+ 				snd_soc_card_get_drvdata(card);
+ 
+-	pr_info("\n");
+ 
+ 	if (drvdata->mclk)
+ 		clk_disable(drvdata->mclk);
+-- 
+1.9.1
+

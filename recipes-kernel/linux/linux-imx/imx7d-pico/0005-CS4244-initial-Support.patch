@@ -1,0 +1,1449 @@
+From c870aca61f983513086cec20bbde7484ddc0d740 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Mon, 12 Feb 2018 22:42:47 +0000
+Subject: [PATCH 05/15] CS4244 initial Support
+
+---
+ arch/arm/configs/tn_imx_defconfig |   1 +
+ sound/soc/codecs/Kconfig          |  10 +
+ sound/soc/codecs/Makefile         |   4 +
+ sound/soc/codecs/cs4244-i2c.c     |  63 ++++
+ sound/soc/codecs/cs4244.c         | 678 ++++++++++++++++++++++++++++++++++++++
+ sound/soc/codecs/cs4244.h         | 185 +++++++++++
+ sound/soc/fsl/Kconfig             |  13 +
+ sound/soc/fsl/Makefile            |   2 +
+ sound/soc/fsl/imx-cs4244.c        | 372 +++++++++++++++++++++
+ 9 files changed, 1328 insertions(+)
+ create mode 100644 sound/soc/codecs/cs4244-i2c.c
+ create mode 100644 sound/soc/codecs/cs4244.c
+ create mode 100644 sound/soc/codecs/cs4244.h
+ create mode 100644 sound/soc/fsl/imx-cs4244.c
+
+diff --git a/arch/arm/configs/tn_imx_defconfig b/arch/arm/configs/tn_imx_defconfig
+index b5b884e..8d0667c 100644
+--- a/arch/arm/configs/tn_imx_defconfig
++++ b/arch/arm/configs/tn_imx_defconfig
+@@ -458,3 +458,4 @@ CONFIG_FONTS=y
+ CONFIG_SND_SOC_MP34DT01=y
+ CONFIG_SND_SOC_IMX_MP34DT01=y
+ CONFIG_SND_SOC_IMX_SPH0645=y
++CONFIG_SND_SOC_IMX_CS4244=m
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index 9a8cb69..6d66aadb 100644
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -57,6 +57,7 @@ config SND_SOC_ALL_CODECS
+ 	select SND_SOC_CS4271_I2C if I2C
+ 	select SND_SOC_CS4271_SPI if SPI_MASTER
+ 	select SND_SOC_CS42XX8_I2C if I2C
++	select SND_SOC_CS4244_I2C if I2C
+ 	select SND_SOC_CS4349 if I2C
+ 	select SND_SOC_CS47L24 if MFD_CS47L24
+ 	select SND_SOC_CS53L30 if I2C
+@@ -463,6 +464,15 @@ config SND_SOC_CS42XX8_I2C
+ 	select SND_SOC_CS42XX8
+ 	select REGMAP_I2C
+ 
++config SND_SOC_CS4244
++        tristate
++
++config SND_SOC_CS4244_I2C
++        tristate "Cirrus Logic CS4244 CODEC (I2C)"
++        depends on I2C
++        select SND_SOC_CS4244
++        select REGMAP_I2C
++
+ # Cirrus Logic CS4349 HiFi DAC
+ config SND_SOC_CS4349
+ 	tristate "Cirrus Logic CS4349 CODEC"
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index 87c7297..d8070e23 100644
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -50,6 +50,8 @@ snd-soc-cs4271-i2c-objs := cs4271-i2c.o
+ snd-soc-cs4271-spi-objs := cs4271-spi.o
+ snd-soc-cs42xx8-objs := cs42xx8.o
+ snd-soc-cs42xx8-i2c-objs := cs42xx8-i2c.o
++snd-soc-cs4244-objs := cs4244.o
++snd-soc-cs4244-i2c-objs := cs4244-i2c.o
+ snd-soc-cs4349-objs := cs4349.o
+ snd-soc-cs47l24-objs := cs47l24.o
+ snd-soc-cs53l30-objs := cs53l30.o
+@@ -278,6 +280,8 @@ obj-$(CONFIG_SND_SOC_CS4271_I2C)	+= snd-soc-cs4271-i2c.o
+ obj-$(CONFIG_SND_SOC_CS4271_SPI)	+= snd-soc-cs4271-spi.o
+ obj-$(CONFIG_SND_SOC_CS42XX8)	+= snd-soc-cs42xx8.o
+ obj-$(CONFIG_SND_SOC_CS42XX8_I2C) += snd-soc-cs42xx8-i2c.o
++obj-$(CONFIG_SND_SOC_CS4244)    += snd-soc-cs4244.o
++obj-$(CONFIG_SND_SOC_CS4244_I2C) += snd-soc-cs4244-i2c.o
+ obj-$(CONFIG_SND_SOC_CS4349)	+= snd-soc-cs4349.o
+ obj-$(CONFIG_SND_SOC_CS47L24)	+= snd-soc-cs47l24.o
+ obj-$(CONFIG_SND_SOC_CS53L30)	+= snd-soc-cs53l30.o
+diff --git a/sound/soc/codecs/cs4244-i2c.c b/sound/soc/codecs/cs4244-i2c.c
+new file mode 100644
+index 0000000..0542790
+--- /dev/null
++++ b/sound/soc/codecs/cs4244-i2c.c
+@@ -0,0 +1,63 @@
++/*
++ * Cirrus Logic CS42448/CS42888 Audio CODEC DAI I2C driver
++ *
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * Author: Nicolin Chen <Guangyu.Chen@freescale.com>
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2. This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++#include <linux/i2c.h>
++#include <linux/module.h>
++#include <linux/pm_runtime.h>
++#include <sound/soc.h>
++
++#include "cs4244.h"
++
++static int cs4244_i2c_probe(struct i2c_client *i2c,
++			     const struct i2c_device_id *id)
++{
++	u32 ret = cs4244_probe(&i2c->dev,
++			devm_regmap_init_i2c(i2c, &cs4244_regmap_config));
++	if (ret)
++		return ret;
++
++	pm_runtime_enable(&i2c->dev);
++	pm_request_idle(&i2c->dev);
++
++	return 0;
++}
++
++static int cs4244_i2c_remove(struct i2c_client *i2c)
++{
++	snd_soc_unregister_codec(&i2c->dev);
++	pm_runtime_disable(&i2c->dev);
++
++	return 0;
++}
++
++static struct i2c_device_id cs4244_i2c_id[] = {
++	{"cs4244", (kernel_ulong_t)&cs4244_data},
++	{}
++};
++MODULE_DEVICE_TABLE(i2c, cs4244_i2c_id);
++
++static struct i2c_driver cs4244_i2c_driver = {
++	.driver = {
++		.name = "cs4244",
++		.owner = THIS_MODULE,
++		.pm = &cs4244_pm,
++	},
++	.probe = cs4244_i2c_probe,
++	.remove = cs4244_i2c_remove,
++	.id_table = cs4244_i2c_id,
++};
++
++module_i2c_driver(cs4244_i2c_driver);
++
++MODULE_DESCRIPTION("Cirrus Logic CS42448/CS42888 ALSA SoC Codec I2C Driver");
++MODULE_AUTHOR("Freescale Semiconductor, Inc.");
++MODULE_LICENSE("GPL");
+diff --git a/sound/soc/codecs/cs4244.c b/sound/soc/codecs/cs4244.c
+new file mode 100644
+index 0000000..449d5e5
+--- /dev/null
++++ b/sound/soc/codecs/cs4244.c
+@@ -0,0 +1,678 @@
++/*
++ * Cirrus Logic CS42448/CS42888 Audio CODEC Digital Audio Interface (DAI) driver
++ *
++ * Copyright (C) 2014-2016 Freescale Semiconductor, Inc.
++ *
++ * Author: Nicolin Chen <Guangyu.Chen@freescale.com>
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2. This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++#include <linux/gpio/consumer.h>
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/tlv.h>
++#include <linux/of_gpio.h>
++#include <linux/of.h>
++
++#include "cs4244.h"
++
++#define CS4244_NUM_SUPPLIES 2
++static const char *const cs4244_supply_names[CS4244_NUM_SUPPLIES] = {
++	"VA",
++	"VD",
++};
++
++#define CS4244_FORMATS	(SNDRV_PCM_FMTBIT_S32_LE)
++static int cs4244_fill_defaults(struct regmap *regmap,  struct reg_default * reg_vals);
++
++
++struct work_data {
++
++	struct work_struct work;
++	int data;
++};
++
++/* codec private data */
++struct cs4244_priv {
++	struct work_data work_regmap;
++	struct regulator_bulk_data supplies[CS4244_NUM_SUPPLIES];
++	const struct cs4244_driver_data *drvdata;
++	struct regmap *regmap;
++	struct clk *clk;
++
++	bool slave_mode;
++	unsigned long sysclk;
++	int rate[2];
++	u32 tx_channels;
++	/*GPIO Reset*/
++	struct gpio_desc *                            gpio_nreset;
++	struct workqueue_struct * wq; 
++};
++
++
++
++static const struct reg_default cs4244_reg[] = {
++	{ 0x06, 0x04  }, /*Clock & SP Sel*/
++	{ 0x07, 0xff  }, /*Sample Widh*/
++	{ 0x08, 0x48  }, /*SP Control*/
++	{ 0x09, 0x01  }, /*SP Data Sel*/
++	{ 0x0a, 0xff  }, /*Reserved*/
++	{ 0x0b, 0xff  }, /*Reserved*/ 
++	{ 0x0c, 0xff  }, /*Reserved*/
++	{ 0x0d, 0xff  }, /*Reserved*/
++	{ 0x0e, 0x00  }, /*Reserved*/
++	{ 0x0f, 0xc0  }, /*ADC Control 1*/
++	{ 0x10, 0xff  }, /*ADC Control 2*/
++	{ 0x11, 0xe0  }, /*Reserved*/
++	{ 0x12, 0xe0  }, /*DAC Control 1*/
++	{ 0x13, 0xe0  }, /*DAC Control 2*/
++	{ 0x14, 0xbf  }, /*DAC Control 3*/
++	{ 0x15, 0x1f  }, /*DAC Control 4*/
++	{ 0x16, 0x87  }, /*Volume Mode*/
++	{ 0x17, 0x10  }, /*MASTER Volume*/
++	{ 0x18, 0x10  }, /*DAC1 Volume*/
++	{ 0x19, 0x10  }, /*DAC2 Volume*/
++	{ 0x1a, 0x10  }, /*DAC3 Volume*/
++	{ 0x1b, 0x10  }, /*DAC4 Volume*/
++	{ 0x1c, 0x10  }, /*Reserved*/
++	{ 0x1d, 0xba  }, /*Reserved*/
++	{ 0x1e, 0x40  }, /*Interrupt Control*/
++	{ 0x1f, 0x10  }, /*Interrupt Mask 1*/
++	{ 0x20, 0x20  }, /*Interrupt Mask 2*/
++	{ 0x21, 0x00  }, /*Interrupt Notification 1*/
++	{ 0x22, 0x00  }, /*Interrupt Notification 1*/
++
++};
++
++/* -90dB to 0dB with step of 0.38dB */
++static const DECLARE_TLV_DB_SCALE(dac_tlv, -8955, 38, 0);
++
++//static const char *const cs4244_adc_single[] = { "Differential", "Single-Ended" };
++static const char *const cs4244_szc[] = { "Immediate Change","Soft Ramp"};
++
++static const struct soc_enum dac_szc_enum =
++	SOC_ENUM_SINGLE(CS4244_DACCTL3, 6, 2, cs4244_szc);
++
++static const struct snd_kcontrol_new cs4244_snd_controls[] = {
++	SOC_SINGLE_TLV("Master Volume", CS4244_VOLAOUT, 0,255, 1,dac_tlv),
++	SOC_DOUBLE_R_TLV("DAC1 Playback Volume", CS4244_VOLAOUT1,
++			 CS4244_VOLAOUT2, 0, 0xff, 1, dac_tlv),
++	SOC_DOUBLE_R_TLV("DAC2 Playback Volume", CS4244_VOLAOUT3,
++			 CS4244_VOLAOUT4, 0, 0xff, 1, dac_tlv),
++	SOC_DOUBLE("DAC1 Invert Switch", CS4244_DACCTL2, 0, 1, 1, 0),
++	SOC_DOUBLE("DAC2 Invert Switch", CS4244_DACCTL2, 2, 3, 1, 0),
++	SOC_SINGLE("DAC De-emphasis Switch", CS4244_DACCTL1, 4, 1, 0),
++};
++
++
++static const struct snd_soc_dapm_widget cs4244_dapm_widgets[] = {
++	SND_SOC_DAPM_DAC("DAC1", "Playback", CS4244_DACCTL4, 1, 1),
++	SND_SOC_DAPM_DAC("DAC2", "Playback", CS4244_DACCTL4, 2, 1),
++	SND_SOC_DAPM_DAC("DAC3", "Playback", CS4244_DACCTL4, 3, 1),
++	SND_SOC_DAPM_DAC("DAC4", "Playback", CS4244_DACCTL4, 4, 1),
++
++	SND_SOC_DAPM_OUTPUT("AOUT1L"),
++	SND_SOC_DAPM_OUTPUT("AOUT1R"),
++	SND_SOC_DAPM_OUTPUT("AOUT2L"),
++	SND_SOC_DAPM_OUTPUT("AOUT2R"),
++	SND_SOC_DAPM_OUTPUT("AOUT3L"),
++	SND_SOC_DAPM_OUTPUT("AOUT3R"),
++	SND_SOC_DAPM_OUTPUT("AOUT4L"),
++	SND_SOC_DAPM_OUTPUT("AOUT4R"),
++};
++
++static const struct snd_soc_dapm_route cs4244_dapm_routes[] = {
++	/* Playback */
++	{ "AOUT1L", NULL, "DAC1" },
++	{ "AOUT1R", NULL, "DAC1" },
++
++	{ "AOUT2L", NULL, "DAC2" },
++	{ "AOUT2R", NULL, "DAC2" },
++
++	{ "AOUT3L", NULL, "DAC3" },
++	{ "AOUT3R", NULL, "DAC3" },
++
++	{ "AOUT4L", NULL, "DAC4" },
++	{ "AOUT4R", NULL, "DAC4" },
++
++};
++
++struct cs4244_ratios {
++	unsigned int mfreq;
++	unsigned int min_mclk;
++	unsigned int max_mclk;
++	unsigned int ratio[3];
++};
++
++static const struct cs4244_ratios cs4244_ratios[] = {
++	{ 0, 1029000, 12800000, {256, 128, 64} },
++	{ 2, 1536000, 19200000, {384, 192, 96} },
++	{ 4, 2048000, 25600000, {512, 256, 128} },
++	{ 6, 3072000, 38400000, {768, 384, 192} },
++	{ 8, 4096000, 51200000, {1024, 512, 256} },
++};
++
++static int cs4244_set_dai_sysclk(struct snd_soc_dai *codec_dai,
++				  int clk_id, unsigned int freq, int dir)
++{
++	struct snd_soc_codec *codec = codec_dai->codec;
++	struct cs4244_priv *cs4244 = snd_soc_codec_get_drvdata(codec);
++
++	cs4244->sysclk = freq;
++
++	return 0;
++}
++
++static int cs4244_set_dai_fmt(struct snd_soc_dai *codec_dai,
++			       unsigned int format)
++{
++	struct snd_soc_codec *codec = codec_dai->codec;
++	struct cs4244_priv *cs4244 = snd_soc_codec_get_drvdata(codec);
++	u32 val;
++
++	/* Set DAI format */
++	switch (format & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case SND_SOC_DAIFMT_LEFT_J:
++		val = CS4244_INTF_DAC_SPF_LEFTJ;
++		break;
++	case SND_SOC_DAIFMT_I2S:
++		val = CS4244_INTF_DAC_SPF_I2S;
++		break;
++	case SND_SOC_DAIFMT_DSP_A:
++		val = CS4244_INTF_DAC_SPF_TDM;
++		break;
++	default:
++		dev_err(codec->dev, "unsupported dai format\n");
++		return -EINVAL;
++	}
++
++	regmap_update_bits(cs4244->regmap, CS4244_PORT_CTRL,
++			   CS4244_INTF_DAC_SPF_MASK, val);
++
++	/* Set master/slave audio interface */
++	switch (format & SND_SOC_DAIFMT_MASTER_MASK) {
++	case SND_SOC_DAIFMT_CBS_CFS:
++		cs4244->slave_mode = true;
++		val = CS4244_INTF_DAC_SLAVE; 
++		break;
++	case SND_SOC_DAIFMT_CBM_CFM:
++		cs4244->slave_mode = false;
++		val = CS4244_INTF_DAC_MASTER;
++		break;
++	default:
++		dev_err(codec->dev, "unsupported master/slave mode\n");
++		return -EINVAL;
++	}
++
++	regmap_update_bits(cs4244->regmap, CS4244_PORT_CTRL,
++		CS4244_INTF_DAC_MASTER_SLAVE_MASK, val);
++
++
++	return 0;
++}
++
++static int cs4244_hw_params(struct snd_pcm_substream *substream,
++			     struct snd_pcm_hw_params *params,
++			     struct snd_soc_dai *dai)
++{
++	struct snd_soc_codec *codec = dai->codec;
++	struct cs4244_priv *cs4244 = snd_soc_codec_get_drvdata(codec);
++	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
++	u32 rate = params_rate(params);
++
++
++	/*Hardcoded to x256*/
++
++	regmap_write(cs4244->regmap, CS4244_MCLK_SPD, 0x30); 	
++
++	return 0;
++}
++
++static int cs4244_hw_free(struct snd_pcm_substream *substream,
++			     struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	struct cs4244_priv *cs4244 = snd_soc_codec_get_drvdata(codec);
++	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
++
++	cs4244->rate[substream->stream] = 0;
++
++
++	return 0;
++}
++
++static int cs4244_trigger(struct snd_pcm_substream *substream, int cmd,
++		struct snd_soc_dai *cpu_dai)
++{
++	struct snd_soc_codec *codec = cpu_dai->codec;
++	struct cs4244_priv *cs4244 = snd_soc_codec_get_drvdata(codec);
++	int val1;
++
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++
++	
++	cs4244->work_regmap.data = SNDRV_PCM_TRIGGER_START;
++	break;
++
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:	
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH: 
++
++	cs4244->work_regmap.data = SNDRV_PCM_TRIGGER_STOP;
++	break;
++	
++	default:
++		return -EINVAL;
++	}
++
++        queue_work(cs4244->wq, &cs4244->work_regmap.work);	
++
++	return 0;
++}
++
++static int cs4244_startup(struct snd_pcm_substream *substream,
++		struct snd_soc_dai *cpu_dai)
++{
++
++	return 0;
++}
++static int cs4244_digital_mute(struct snd_soc_dai *dai, int mute)
++{
++	struct snd_soc_codec *codec = dai->codec;
++	struct cs4244_priv *cs4244 = snd_soc_codec_get_drvdata(codec);
++
++	if(mute)
++	{
++		snd_soc_write(codec, CS4244_DACCTL3, 0xbf);
++		snd_soc_write(codec, CS4244_DACCTL4, 0x1f);
++
++	}
++	return 0;
++}
++
++static const struct snd_soc_dai_ops cs4244_dai_ops = {
++	.set_fmt	= cs4244_set_dai_fmt,
++	.set_sysclk	= cs4244_set_dai_sysclk,
++	.hw_params	= cs4244_hw_params,
++	.trigger 	= cs4244_trigger,
++	.hw_free	= cs4244_hw_free,
++	.digital_mute	= cs4244_digital_mute,
++	.startup	= cs4244_startup,
++};
++
++static struct snd_soc_dai_driver cs4244_dai = {
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 1,
++		.channels_max = 8,
++		.rates = SNDRV_PCM_RATE_8000_96000,
++		.formats = CS4244_FORMATS,
++	},
++#if 0
++	.capture = {
++		.stream_name = "Capture",
++		.channels_min = 1,
++		.rates = SNDRV_PCM_RATE_8000_192000,
++		.formats = CS4244_FORMATS,
++	},
++
++#endif
++	.ops = &cs4244_dai_ops,
++};
++
++
++
++static int cs4244_fill_defaults(struct regmap *regmap,  struct reg_default * reg_vals)
++{
++
++        int i, ret, val, index;
++
++        for (i = 0; i < ARRAY_SIZE(cs4244_reg); i++) {
++
++                index = reg_vals[i].reg;
++                val = reg_vals[i].def;
++                ret = regmap_write(regmap, index, val);
++        }
++
++        return 0;
++
++}
++
++static bool cs4244_volatile_register(struct device *dev, unsigned int reg)
++{
++	switch(reg){
++	case CS4244_INT1:
++	case CS4244_INT2:
++		return true;
++	default:
++		return false;
++	}
++}
++
++static int read_chipid(struct cs4244_priv *cs4244)
++{
++	int ret, val, chipid;
++	int val1,val2,val3; 
++	ret = val = chipid = 0;
++	
++	ret = regmap_read(cs4244->regmap, CS4244_CHIPID1, &val1);
++	ret |= regmap_read(cs4244->regmap, CS4244_CHIPID2, &val2);
++	ret |= regmap_read(cs4244->regmap, CS4244_CHIPID3, &val3);
++	
++	if(ret < 0)
++		return ret;
++	
++	chipid = (val1 >> CS4244_CHIPID_CHIP_ID_SHIFTA) & 0x03;
++	chipid = chipid << 2;	
++	chipid = chipid | ((val1 >> CS4244_CHIPID_CHIP_ID_SHIFTB) & 0x03);
++	chipid = chipid << 2;
++	
++	chipid = chipid | ((val2 >> CS4244_CHIPID_CHIP_ID_SHIFTA) & 0x03);
++	chipid = chipid << 2;	
++	chipid = chipid | ((val2 >> CS4244_CHIPID_CHIP_ID_SHIFTB) & 0x03);
++	chipid = chipid << 2;
++
++	chipid = chipid | ((val3 >> CS4244_CHIPID_CHIP_ID_SHIFTA) & 0x03);
++	chipid = chipid << 2;	
++	chipid = chipid | ((val3 >> CS4244_CHIPID_CHIP_ID_SHIFTB) & 0x03);
++	chipid = chipid << 2;
++
++	return chipid;
++}
++
++static bool cs4244_writeable_register(struct device *dev, unsigned int reg)
++{
++	switch (reg) {
++	case CS4244_CHIPID1:
++	case CS4244_CHIPID2:
++	case CS4244_CHIPID3:
++	case CS4244_RSVD:
++	case CS4244_REVID:
++	case CS4244_RSVD0A:
++	case CS4244_RSVD0B:
++	case CS4244_RSVD0C:
++	case CS4244_RSVD0D:
++	case CS4244_RSVD0E:
++	case CS4244_RSVD11:
++	case CS4244_RSVD1C:
++	case CS4244_RSVD1D:
++		return false;
++	default:
++		return true;
++	}
++}
++
++const struct regmap_config cs4244_regmap_config = {
++	.reg_bits = 8,
++	.val_bits = 8,
++
++	.max_register = CS4244_NUMREGS,
++	.reg_defaults = cs4244_reg,
++	.num_reg_defaults = ARRAY_SIZE(cs4244_reg),
++	.volatile_reg = cs4244_volatile_register,
++	.writeable_reg = cs4244_writeable_register,
++	.cache_type = REGCACHE_RBTREE,
++};
++EXPORT_SYMBOL_GPL(cs4244_regmap_config);
++
++static int cs4244_codec_probe(struct snd_soc_codec *codec)
++{
++	
++	return 0;
++}
++
++static const struct snd_soc_codec_driver cs4244_driver = {
++	.probe = cs4244_codec_probe,
++	.idle_bias_off = true,
++
++	.component_driver = { 
++		.controls = cs4244_snd_controls,
++		.num_controls = ARRAY_SIZE(cs4244_snd_controls),
++		.dapm_widgets = cs4244_dapm_widgets,
++		.num_dapm_widgets = ARRAY_SIZE(cs4244_dapm_widgets),
++		.dapm_routes = cs4244_dapm_routes,
++		.num_dapm_routes = ARRAY_SIZE(cs4244_dapm_routes),
++	},
++};
++
++const struct cs4244_driver_data cs4244_data = {
++	.name = "cs4244",
++	.num_adcs = 0,
++};
++EXPORT_SYMBOL_GPL(cs4244_data);
++
++
++static const struct of_device_id cs4244_of_match[] = {
++	{ .compatible = "cirrus,cs4244", .data = &cs4244_data, },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, cs4244_of_match);
++EXPORT_SYMBOL_GPL(cs4244_of_match);
++
++static void regmap_handler(struct work_struct *work)
++{
++    struct cs4244_priv *cs4244 = (struct cs4244_priv *)work;
++    int cmd = cs4244->work_regmap.data;
++
++
++	switch(cmd)
++	{
++	case SNDRV_PCM_TRIGGER_START:
++
++	//regmap_update_bits(cs4244->regmap,CS4244_DACCTL4,0x0f, 0x1f);
++        /*PDN DAC*/
++        //regmap_update_bits(cs4244->regmap,CS4244_DACCTL3,0x0f, 0xbf);	
++
++
++	//mdelay(100);
++	/*Mute DAC*/
++	regmap_write(cs4244->regmap,CS4244_DACCTL4,0x10);	
++
++	/*PDN DAC*/
++	regmap_write(cs4244->regmap,CS4244_DACCTL3, 0xb0);
++	
++	break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	break;
++
++	default:
++        regmap_update_bits(cs4244->regmap,CS4244_DACCTL4,0x0f, 0x1f);
++        /*PDN DAC*/
++        regmap_update_bits(cs4244->regmap,CS4244_DACCTL3,0x0f, 0xbf);	
++
++	}
++
++}
++
++int cs4244_probe(struct device *dev, struct regmap *regmap)
++{
++	const struct of_device_id *of_id = of_match_device(cs4244_of_match, dev);
++	struct cs4244_priv *cs4244;
++	int ret, val, i;
++
++	cs4244 = devm_kzalloc(dev, sizeof(*cs4244), GFP_KERNEL);
++	if (cs4244 == NULL)
++		return -ENOMEM;
++
++	dev_set_drvdata(dev, cs4244);
++
++	if (of_id)
++		cs4244->drvdata = of_id->data;
++
++	if (!cs4244->drvdata) {
++		dev_err(dev, "failed to find driver data\n");
++		return -EINVAL;
++	}
++
++	cs4244->clk = devm_clk_get(dev, "mclk");
++	if (IS_ERR(cs4244->clk)) {
++		dev_err(dev, "failed to get the clock: %ld\n",
++				PTR_ERR(cs4244->clk));
++		return -EINVAL;
++	}
++
++	cs4244->sysclk = clk_get_rate(cs4244->clk);
++
++	for (i = 0; i < ARRAY_SIZE(cs4244->supplies); i++)
++		cs4244->supplies[i].supply = cs4244_supply_names[i];
++
++	ret = devm_regulator_bulk_get(dev,
++			ARRAY_SIZE(cs4244->supplies), cs4244->supplies);
++	if (ret) {
++		dev_err(dev, "failed to request supplies: %d\n", ret);
++		return ret;
++	}
++
++	ret = regulator_bulk_enable(ARRAY_SIZE(cs4244->supplies),
++				    cs4244->supplies);
++	if (ret) {
++		dev_err(dev, "failed to enable supplies: %d\n", ret);
++		return ret;
++	}
++
++	/* Make sure hardware reset done */
++	msleep(5);
++
++	cs4244->regmap = regmap;
++	if (IS_ERR(cs4244->regmap)) {
++		ret = PTR_ERR(cs4244->regmap);
++		dev_err(dev, "failed to allocate regmap: %d\n", ret);
++		goto err_enable;
++	}
++	/*
++	 * We haven't marked the chip revision as volatile due to
++	 * sharing a register with the right input volume; explicitly
++	 * bypass the cache to read it.
++	 */
++	regcache_cache_bypass(cs4244->regmap, true);
++
++	/* Validate the chip ID */
++	ret = read_chipid(cs4244);
++	if (ret < 0) {
++		dev_err(dev, "failed to get device ID, ret = %d", ret);
++		goto err_enable;
++	}
++
++	/* Get Revision ID */
++	ret = regmap_read(cs4244->regmap, CS4244_REVID, &val);
++	if (ret < 0) {
++		dev_err(dev, "failed to get Revision ID, ret = %d", ret);
++		goto err_enable;
++	}
++	dev_info(dev, "found device, revision %X\n", val );
++
++
++	cs4244_dai.name = cs4244->drvdata->name;
++
++	/* Each adc supports stereo input */
++	cs4244_dai.capture.channels_max = cs4244->drvdata->num_adcs * 2;
++
++
++	cs4244->gpio_nreset = devm_gpiod_get(dev, "reset",
++				GPIOD_OUT_LOW);
++        if (IS_ERR(cs4244->gpio_nreset))
++               return PTR_ERR(cs4244->gpio_nreset);
++
++	if(cs4244->gpio_nreset)
++	gpiod_set_value_cansleep(cs4244->gpio_nreset, 1);
++	mdelay(250);
++	gpiod_set_value_cansleep(cs4244->gpio_nreset, 0);
++
++	cs4244->wq = create_workqueue("regmap worqueue");
++	INIT_WORK(&cs4244->work_regmap.work, regmap_handler);
++	
++	regcache_cache_bypass(cs4244->regmap, false);
++	
++	ret = snd_soc_register_codec(dev, &cs4244_driver, &cs4244_dai, 1);
++	if (ret) {
++		dev_err(dev, "failed to register codec:%d\n", ret);
++		goto err_enable;
++	}
++
++
++	regcache_cache_only(cs4244->regmap, false);
++
++err_enable:
++	regulator_bulk_disable(ARRAY_SIZE(cs4244->supplies),
++			       cs4244->supplies);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(cs4244_probe);
++
++#ifdef CONFIG_PM
++static int cs4244_runtime_resume(struct device *dev)
++{
++	struct cs4244_priv *cs4244 = dev_get_drvdata(dev);
++	int ret;
++
++	ret = clk_prepare_enable(cs4244->clk);
++	if (ret) {
++		dev_err(dev, "failed to enable mclk: %d\n", ret);
++		return ret;
++	}
++
++	ret = regulator_bulk_enable(ARRAY_SIZE(cs4244->supplies),
++				    cs4244->supplies);
++	if (ret) {
++		dev_err(dev, "failed to enable supplies: %d\n", ret);
++		goto err_clk;
++	}
++
++//	regcache_cache_only(cs4244->regmap, false);
++
++	ret = regcache_sync(cs4244->regmap);
++	if (ret) {
++		dev_err(dev, "failed to sync regmap: %d\n", ret);
++		goto err_bulk;
++	}
++
++	
++	return 0;
++
++err_bulk:
++	regulator_bulk_disable(ARRAY_SIZE(cs4244->supplies),
++			       cs4244->supplies);
++err_clk:
++	clk_disable_unprepare(cs4244->clk);
++
++	return ret;
++}
++
++static int cs4244_runtime_suspend(struct device *dev)
++{
++	struct cs4244_priv *cs4244 = dev_get_drvdata(dev);
++
++
++//	regcache_cache_only(cs4244->regmap, false);
++
++	regulator_bulk_disable(ARRAY_SIZE(cs4244->supplies),
++			       cs4244->supplies);
++
++	clk_disable_unprepare(cs4244->clk);
++
++	return 0;
++}
++#endif
++
++const struct dev_pm_ops cs4244_pm = {
++	SET_RUNTIME_PM_OPS(cs4244_runtime_suspend, cs4244_runtime_resume, NULL)
++};
++EXPORT_SYMBOL_GPL(cs4244_pm);
++
++MODULE_DESCRIPTION("Cirrus Logic CS4244 ALSA SoC Codec Driver");
++MODULE_AUTHOR("Freescale Semiconductor, Inc.");
++MODULE_LICENSE("GPL");
+diff --git a/sound/soc/codecs/cs4244.h b/sound/soc/codecs/cs4244.h
+new file mode 100644
+index 0000000..527bbe8
+--- /dev/null
++++ b/sound/soc/codecs/cs4244.h
+@@ -0,0 +1,185 @@
++/*
++ * cs4244.h - Cirrus Logic CS42448/CS42888 Audio CODEC driver header file
++ *
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * Author: Nicolin Chen <Guangyu.Chen@freescale.com>
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2. This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++#ifndef _CS4244_H
++#define _CS4244_H
++
++struct cs4244_driver_data {
++	char name[32];
++	int num_adcs;
++};
++
++extern const struct dev_pm_ops cs4244_pm;
++extern const struct cs4244_driver_data cs4244_data;
++extern const struct regmap_config cs4244_regmap_config;
++int cs4244_probe(struct device *dev, struct regmap *regmap);
++
++/* CS42888 register map */
++
++#define CS4244_RSVD0A				0x0A	/* Chip ID dd*/
++#define CS4244_RSVD0B				0x0B	/* Chip ID dd*/
++#define CS4244_RSVD0C				0x0C	/* Chip ID dd*/
++#define CS4244_RSVD0D				0x0D	/* Chip ID dd*/
++#define CS4244_RSVD0E				0x0E	/* Chip ID dd*/
++#define CS4244_RSVD11				0x11	/* Chip ID dd*/
++#define CS4244_RSVD1C				0x1C	/* Chip ID dd*/
++#define CS4244_RSVD1D				0x1D	/* Chip ID dd*/
++#define CS4244_MCLK_SPD_MCLK_MASK		0xE0    /*MCLK RATE MASK*/
++#define CS4244_INT1                             0x21    /* Chip ID dd*/
++#define CS4244_INT2	                        0x22    /* Chip ID dd*/
++
++#define CS4244_CHIPID1				0x01	/* Chip ID dd*/
++#define CS4244_CHIPID2				0x02	/* Chip ID dd*/
++#define CS4244_CHIPID3				0x03	/* Chip ID dd*/
++#define CS4244_RSVD				0x04	/*  Reserved Field */
++#define CS4244_REVID				0x05	/* Revision ID dd*/
++#define CS4244_MCLK_SPD				0x06	/* Funtional Mode Clock & Speed dd*/
++#define CS4244_SAMPLE_WIDTH			0x07	/* Functional Mode Sample Width  dd*/
++#define CS4244_PORT_CTRL			0x08	/* Functional Mode SP Control dd*/
++#define CS4244_DAC_SRC				0x09	/* DAC Data Source Formats dd*/
++//#define CS4244_ADCCTL1				0x0F	/* ADC VA HiPass Fltr and INV Control dd*/
++//#define CS4244_ADCCTL2				0x10	/* ADC Mute & PDN Control dd*/
++#define CS4244_DACCTL1				0x12	/* DAC Noise Gate and De-empheasis Control dd*/
++#define CS4244_DACCTL2				0x13	/* DAC Channel Invert dd*/
++#define CS4244_DACCTL3				0x014	/* DAC Attenuation & Mute dd*/
++#define CS4244_DACCTL4				0x015	/* DAC Power Down Control dd*/
++#define CS4244_VOLMODE				0x016	/* Volume Mode Control - Delay dd*/
++#define CS4244_VOLAOUT				0x17	/* Master Volume Control AOUT dd*/
++#define CS4244_VOLAOUT1				0x18	/* Volume Control AOUT1 dd*/
++#define CS4244_VOLAOUT2				0x19	/* Volume Control AOUT2 dd*/
++#define CS4244_VOLAOUT3				0x1A	/* Volume Control AOUT3 dd*/
++#define CS4244_VOLAOUT4				0x1B	/* Volume Control AOUT4 dd*/
++
++#define CS4244_FIRSTREG				CS4244_CHIPID1
++#define CS4244_LASTREG				CS4244_VOLAOUT4
++#define CS4244_NUMREGS				0x22 //(CS4244_LASTREG - CS4244_FIRSTREG + 1)
++#define CS4244_I2C_INCR				0x80
++
++/* Chip I.D. (Address 01h - 03h) dd*/
++#define CS4244_CHIPID_CHIP_ID_SHIFTA		5
++#define CS4244_CHIPID_CHIP_ID_SHIFTB		1
++#define CS4244_CHIPID_CHIP_ID_WIDTH		2
++
++
++/* Chip Rev (Address 5h) dd*/
++#define CS4244_CHIPID_REV_ID_MASK		0xFF
++
++/* Functional Mode (Address 06h) dd*/
++#define CS4244_FUNCMOD_MCLK_SHIFT		1
++#define CS4244_FUNCMOD_MCLK_WIDTH		3
++#define CS4244_FUNCMOD_MCLK_MASK		(((1 << CS4244_FUNCMOD_MCLK_WIDTH) - 1) << CS4244_FUNCMOD_MCLK_SHIFT)
++
++#define CS4244_FM_MCLK_RATE_256			0
++#define CS4244_FM_MCLK_RATE_384			1
++#define CS4244_FM_MCLK_RATE_512			2
++
++#define CS4244_FUNCMOD_SPEED_MODE_SHIFT		4
++#define CS4244_FUNCMOD_SPEED_MODE_WIDTH		2
++#define CS4244_FUNCMOD_SPEED_MODE_MASK		(((1 << CS4244_FUNCMOD_SPEED_MODE_WIDTH) - 1) << CS4244_FUNCMOD_SPEED_MODE_SHIFT)
++
++#define CS4244_FM_SINGLE			0
++#define CS4244_FM_DOUBLE			1
++#define CS4244_FM_QUAD				2
++#define CS4244_FM_AUTO				3
++
++
++/* Sample Width Formats (Address 07h) dd */
++#define CS4244_INTF_DAC_SW_WIDTH_SHIFT		6
++#define CS4244_INTF_DAC_SW_WIDTH		2
++#define CS4244_INTF_DAC_SW_WIDTH_MASK		(((1 << CS4244_INTF_DAC_SW_WIDTH) - 1) << CS4244_INTF_DAC_SW_WIDTH_SHIFT)
++
++/* Serial Port Formats (Address 08h) dd */
++#define CS4244_INTF_DAC_SPF_SHIFT		2
++#define CS4244_INTF_DAC_SPF_WIDTH		2
++#define CS4244_INTF_DAC_SPF_MASK		(((1 << CS4244_INTF_DAC_SPF_WIDTH) - 1) << CS4244_INTF_DAC_SPF_SHIFT)
++#define CS4244_INTF_DAC_SPF_LEFTJ		(0 << CS4244_INTF_DAC_SPF_SHIFT)
++#define CS4244_INTF_DAC_SPF_I2S			(1 << CS4244_INTF_DAC_SPF_SHIFT)
++#define CS4244_INTF_DAC_SPF_TDM			(2 << CS4244_INTF_DAC_SPF_SHIFT)
++
++#define CS4244_INTF_DAC_MASTER_SLAVE_MASK	0x01
++#define CS4244_INTF_DAC_MASTER			1
++#define CS4244_INTF_DAC_SLAVE			0
++
++/* Serial Port Data Select (Address 09h) dd */
++#define CS4244_INTF_DAC_SPDS_SHIFT		3
++#define CS4244_INTF_DAC_SPDS_WIDTH		3
++
++#define CS4244_SPDS_SLOT0			0 //Slots 1-4 of the TDM stream on SDIN1
++#define CS4244_SPDS_SLOT1			1 //Slots 5-8 of the TDM stream on SDIN1
++#define CS4244_SPDS_SLOT2			2 //Slots 9-12 of the TDM stream on SDIN1
++#define CS4244_SPDS_SLOT3			3 //Slots 13-16 of the TDM stream on SDIN1
++#define CS4244_SPDS_SLOT4			4 //Slots 1-4 of the TDM stream on SDIN2
++#define CS4244_SPDS_SLOT5			5 //Slots 5-8 of the TDM stream on SDIN2
++#define CS4244_SPDS_SLOT6			6 //Slots 9-12 of the TDM stream on SDIN2
++#define CS4244_SPDS_SLOT7			7 //Slots 13-16 of the TDM stream on SDIN2
++
++
++/* DAC Control Noise Gate (Address 12h) dd*/
++#define CS4244_NGCTL_DAC_SHIFT			5
++#define CS4244_NGCTL_DAC_MASK			(3 << CS4244_INVCTL_DAC4_SHIFT)
++
++#define CS4244_DEMCTL_DAC_SHIFT			4
++#define CS4244_DEMCTL_DAC_DEM_MASK		(1 << CS4244_DEMCTL_DAC_SHIFT)
++#define CS4244_DEMCTL_DAC_DEM			(1 << CS4244_DEMCTL_DAC_SHIFT)
++
++
++ 
++/* DAC INV Control (Address 13h) dd*/
++#define CS4244_INVCTL_DAC4_SHIFT		3
++#define CS4244_INVCTL_DAC4_MASK			(1 << CS4244_INVCTL_DAC4_SHIFT)
++#define CS4244_INVCTL_DAC4			(1 << CS4244_INVCTL_DAC4_SHIFT)
++#define CS4244_INVCTL_DAC3_SHIFT		2
++#define CS4244_INVCTL_DAC3_MASK			(1 << CS4244_INVCTL_DAC3_SHIFT)
++#define CS4244_INVCTL_DAC3			(1 << CS4244_INVCTL_DAC3_SHIFT)
++#define CS4244_INVCTL_DAC2_SHIFT		1
++#define CS4244_INVCTL_DAC2_MASK			(1 << CS4244_INVCTL_DAC2_SHIFT)
++#define CS4244_INVCTL_DAC2			(1 << CS4244_INVCTL_DAC2_SHIFT)
++#define CS4244_INVCTL_DAC1_SHIFT		0
++#define CS4244_INVCTL_DAC1_MASK			(1 << CS4244_INVCTL_DAC1_SHIFT)
++#define CS4244_INVCTL_DAC1			(1 << CS4244_INVCTL_DAC1_SHIFT)
++	
++	
++/* DAC Mute Control (Address 14h) dd*/
++#define CS4244_MUTECTL_DAC4_SHIFT		3
++#define CS4244_MUTECTL_DAC4_MASK		(1 << CS4244_MUTE_DAC4_SHIFT)
++#define CS4244_MUTECTL_DAC4_MUTE		(1 << CS4244_MUTE_DAC4_SHIFT)
++#define CS4244_MUTECTL_DAC3_SHIFT		2
++#define CS4244_MUTECTL_DAC3_MASK		(1 << CS4244_MUTE_DAC3_SHIFT)
++#define CS4244_MUTECTL_DAC3_MUTE		(1 << CS4244_MUTE_DAC3_SHIFT)
++#define CS4244_MUTECTL_DAC2_SHIFT		1
++#define CS4244_MUTECTL_DAC2_MASK		(1 << CS4244_MUTE_DAC2_SHIFT)
++#define CS4244_MUTECTL_DAC2_MUTE		(1 << CS4244_MUTE_DAC2_SHIFT)
++#define CS4244_MUTECTL_DAC1_SHIFT		0			
++#define CS4244_MUTECTL_DAC1_MASK		(1 << CS4244_MUTE_DAC1_SHIFT)
++#define CS4244_MUTECTL_DAC1_MUTE		(1 << CS4244_MUTE_DAC1_SHIFT)
++#define CS4244_MUTECTL_DAC_ALL_MUTE_MASK	0x0F
++#define CS4244_MUTECTL_DAC_ALL_MUTE		0x0F
++
++
++/* DAC Power Control (Address 15h) dd*/
++#define CS4244_PWRCTL_DAC4_SHIFT		3
++#define CS4244_PWRCTL_DAC4_MASK			(1 << CS4244_PWRCTL_DAC4_SHIFT)
++#define CS4244_PWRCTL_DAC4_PDN			(1 << CS4244_PWRCTL_DAC4_SHIFT)
++#define CS4244_PWRCTL_DAC3_SHIFT		2
++#define CS4244_PWRCTL_DAC3_MASK			(1 << CS4244_PWRCTL_DAC3_SHIFT)
++#define CS4244_PWRCTL_DAC3_PDN			(1 << CS4244_PWRCTL_DAC3_SHIFT)
++#define CS4244_PWRCTL_DAC2_SHIFT		1
++#define CS4244_PWRCTL_DAC2_MASK			(1 << CS4244_PWRCTL_DAC2_SHIFT)
++#define CS4244_PWRCTL_DAC2_PDN			(1 << CS4244_PWRCTL_DAC2_SHIFT)
++#define CS4244_PWRCTL_DAC1_SHIFT		0
++#define CS4244_PWRCTL_DAC1_MASK			(1 << CS4244_PWRCTL_DAC1_SHIFT)
++#define CS4244_PWRCTL_DAC1_PDN			(1 << CS4244_PWRCTL_DAC1_SHIFT)
++#define CS4244_PWRCTL_DAC_PDN_ALL_MASK		0x0F
++#define CS4244_PWRCTL_DAC_PDN_ALL		0x0F
++
++
++#endif /* _CS4244_H */
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index 13b12a9..e628e57 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -303,6 +303,19 @@ config SND_SOC_IMX_CS42888
+ 	 Say Y if you want to add support for SoC audio on an i.MX board with
+ 	 a cs42888 codec.
+ 
++config SND_SOC_IMX_CS4244
++        tristate "SoC Audio support for i.MX boards with cs4244"
++        depends on OF && I2C
++       select SND_SOC_CS4244_I2C
++        select SND_SOC_IMX_PCM_DMA
++        select SND_SOC_FSL_ESAI
++        select SND_SOC_FSL_ASRC
++        select SND_SOC_FSL_UTILS
++        help
++         SoC Audio support for i.MX boards with cs4244
++         Say Y if you want to add support for SoC audio on an i.MX board with
++         a cs4244 codec
++
+ config SND_SOC_IMX_WM8962
+ 	tristate "SoC Audio support for i.MX boards with wm8962"
+ 	depends on OF && I2C && INPUT
+diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
+index df8b688..8af8403 100644
+--- a/sound/soc/fsl/Makefile
++++ b/sound/soc/fsl/Makefile
+@@ -60,6 +60,7 @@ snd-soc-mx27vis-aic32x4-objs := mx27vis-aic32x4.o
+ snd-soc-wm1133-ev1-objs := wm1133-ev1.o
+ snd-soc-imx-es8328-objs := imx-es8328.o
+ snd-soc-imx-cs42888-objs := imx-cs42888.o
++snd-soc-imx-cs4244-objs := imx-cs4244.o
+ snd-soc-imx-sgtl5000-objs := imx-sgtl5000.o
+ snd-soc-imx-sph0645-objs := imx-sph0645.o
+ snd-soc-imx-mp34dt01-objs := imx-mp34dt01.o
+@@ -81,6 +82,7 @@ obj-$(CONFIG_SND_SOC_MX27VIS_AIC32X4) += snd-soc-mx27vis-aic32x4.o
+ obj-$(CONFIG_SND_MXC_SOC_WM1133_EV1) += snd-soc-wm1133-ev1.o
+ obj-$(CONFIG_SND_SOC_IMX_ES8328) += snd-soc-imx-es8328.o
+ obj-$(CONFIG_SND_SOC_IMX_CS42888) += snd-soc-imx-cs42888.o
++obj-$(CONFIG_SND_SOC_IMX_CS4244) += snd-soc-imx-cs4244.o
+ obj-$(CONFIG_SND_SOC_IMX_SGTL5000) += snd-soc-imx-sgtl5000.o
+ obj-$(CONFIG_SND_SOC_IMX_SPH0645) += snd-soc-imx-sph0645.o
+ obj-$(CONFIG_SND_SOC_IMX_MP34DT01) += snd-soc-imx-mp34dt01.o
+diff --git a/sound/soc/fsl/imx-cs4244.c b/sound/soc/fsl/imx-cs4244.c
+new file mode 100644
+index 0000000..2b3eae5
+--- /dev/null
++++ b/sound/soc/fsl/imx-cs4244.c
+@@ -0,0 +1,372 @@
++/*
++ * Copyright (C) 2010-2016 Freescale Semiconductor, Inc. All Rights Reserved.
++ */
++
++/*
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/slab.h>
++#include <linux/device.h>
++#include <linux/i2c.h>
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/soc.h>
++#include <sound/initval.h>
++#include <sound/pcm_params.h>
++
++#include "fsl_sai.h"
++
++#define CODEC_CLK_EXTER_OSC   1
++#define CODEC_CLK_SAI_HCKT   2
++#define SUPPORT_RATE_NUM    10
++
++struct imx_priv {
++	unsigned int mclk_freq;
++	struct platform_device *pdev;
++	struct platform_device *asrc_pdev;
++	u32 asrc_rate;
++	u32 asrc_format;
++	bool is_codec_master;
++};
++
++static struct imx_priv card_priv;
++
++static int imx_cs4244_surround_hw_params(struct snd_pcm_substream *substream,
++					 struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++	struct snd_soc_dai *codec_dai = rtd->codec_dai;
++	struct imx_priv *priv = &card_priv;
++	struct device *dev = &priv->pdev->dev;
++	u32 dai_format = 0;
++	int ret = 0;
++
++	if (priv->is_codec_master) {
++		dai_format = SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_NB_NF |
++			     SND_SOC_DAIFMT_CBM_CFM;
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			ret = snd_soc_dai_set_sysclk(cpu_dai, 0,
++				       priv->mclk_freq, SND_SOC_CLOCK_IN);
++		else
++			ret = snd_soc_dai_set_sysclk(cpu_dai, 0,
++				       priv->mclk_freq, SND_SOC_CLOCK_IN);
++		if (ret) {
++			dev_err(dev, "failed to set cpu sysclk: %d\n", ret);
++			return ret;
++		}
++
++		ret = snd_soc_dai_set_sysclk(codec_dai, 0,
++					priv->mclk_freq, SND_SOC_CLOCK_OUT);
++		if (ret) {
++			dev_err(dev, "failed to set codec sysclk: %d\n", ret);
++			return ret;
++		}
++
++	} else {
++		dai_format = SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_NB_NF |
++			     SND_SOC_DAIFMT_CBS_CFS;
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			ret = snd_soc_dai_set_sysclk(cpu_dai, 0, 0, SND_SOC_CLOCK_OUT);
++		else
++			ret = snd_soc_dai_set_sysclk(cpu_dai, 0, 0, SND_SOC_CLOCK_OUT);
++		if (ret) {
++			dev_err(dev, "failed to set cpu sysclk: %d\n", ret);
++			return ret;
++		}
++
++		ret = snd_soc_dai_set_sysclk(codec_dai, 0,
++					priv->mclk_freq, SND_SOC_CLOCK_IN);
++		if (ret) {
++			dev_err(dev, "failed to set codec sysclk: %d\n", ret);
++			return ret;
++		}
++	}
++
++	/* set cpu DAI configuration */
++	ret = snd_soc_dai_set_fmt(cpu_dai, dai_format);
++	if (ret) {
++		dev_err(dev, "failed to set cpu dai fmt: %d\n", ret);
++		return ret;
++	}
++	/* set i.MX active slot mask */
++	snd_soc_dai_set_tdm_slot(cpu_dai, 0x0, 0x0, 8, 32);
++
++	/* set codec DAI configuration */
++	ret = snd_soc_dai_set_fmt(codec_dai, dai_format);
++	if (ret) {
++		dev_err(dev, "failed to set codec dai fmt: %d\n", ret);
++		return ret;
++	}
++	return 0;
++}
++
++static int imx_cs4244_surround_startup(struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	static struct snd_pcm_hw_constraint_list constraint_rates;
++	struct imx_priv *priv = &card_priv;
++	struct device *dev = &priv->pdev->dev;
++	static u32 support_rates[SUPPORT_RATE_NUM];
++	int ret;
++
++	if (priv->mclk_freq == 24576000) {
++		support_rates[0] = 48000;
++		support_rates[1] = 96000;
++		support_rates[2] = 192000;
++		constraint_rates.list = support_rates;
++		constraint_rates.count = 3;
++
++		ret = snd_pcm_hw_constraint_list(runtime, 0, SNDRV_PCM_HW_PARAM_RATE,
++							&constraint_rates);
++		if (ret)
++			return ret;
++	} else
++		dev_warn(dev, "mclk may be not supported %d\n", priv->mclk_freq);
++
++	return 0;
++}
++
++static struct snd_soc_ops imx_cs4244_surround_ops = {
++	.startup = imx_cs4244_surround_startup,
++	.hw_params = imx_cs4244_surround_hw_params,
++};
++
++/**
++ * imx_cs4244_surround_startup() is to set constrain for hw parameter, but
++ * backend use same runtime as frontend, for p2p backend need to use different
++ * parameter, so backend can't use the startup.
++ */
++static struct snd_soc_ops imx_cs4244_surround_ops_be = {
++	.hw_params = imx_cs4244_surround_hw_params,
++};
++
++
++static const struct snd_soc_dapm_widget imx_cs4244_dapm_widgets[] = {
++	SND_SOC_DAPM_LINE("Line Out Jack", NULL),
++	SND_SOC_DAPM_LINE("Line In Jack", NULL),
++};
++
++static const struct snd_soc_dapm_route audio_map[] = {
++	/* Line out jack */
++	{"Line Out Jack", NULL, "AOUT1L"},
++	{"Line Out Jack", NULL, "AOUT1R"},
++	{"Line Out Jack", NULL, "AOUT2L"},
++	{"Line Out Jack", NULL, "AOUT2R"},
++	{"Line Out Jack", NULL, "AOUT3L"},
++	{"Line Out Jack", NULL, "AOUT3R"},
++	{"Line Out Jack", NULL, "AOUT4L"},
++	{"Line Out Jack", NULL, "AOUT4R"},
++
++};
++
++static int be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
++				struct snd_pcm_hw_params *params) {
++
++	struct imx_priv *priv = &card_priv;
++	struct snd_interval *rate;
++	struct snd_mask *mask;
++
++	if (!priv->asrc_pdev)
++		return -EINVAL;
++
++	rate = hw_param_interval(params, SNDRV_PCM_HW_PARAM_RATE);
++	rate->max = rate->min = priv->asrc_rate;
++
++	mask = hw_param_mask(params, SNDRV_PCM_HW_PARAM_FORMAT);
++	snd_mask_none(mask);
++	snd_mask_set(mask, priv->asrc_format);
++
++	return 0;
++}
++
++static struct snd_soc_dai_link imx_cs4244_dai[] = {
++	{
++		.name = "HiFi",
++		.stream_name = "HiFi",
++		.codec_dai_name = "cs4244",
++		.ops = &imx_cs4244_surround_ops,
++		.ignore_pmdown_time = 1,
++	},
++	{
++		.name = "HiFi-ASRC-FE",
++		.stream_name = "HiFi-ASRC-FE",
++		.codec_name = "snd-soc-dummy",
++		.codec_dai_name = "snd-soc-dummy-dai",
++		.dynamic = 1,
++		.ignore_pmdown_time = 1,
++		.dpcm_playback = 1,
++		.dpcm_capture = 1,
++	},
++	{
++		.name = "HiFi-ASRC-BE",
++		.stream_name = "HiFi-ASRC-BE",
++		.codec_dai_name = "cs4244",
++		.platform_name = "snd-soc-dummy",
++		.no_pcm = 1,
++		.ignore_pmdown_time = 1,
++		.dpcm_playback = 1,
++		.dpcm_capture = 1,
++		.ops = &imx_cs4244_surround_ops_be,
++		.be_hw_params_fixup = be_hw_params_fixup,
++	},
++};
++
++static struct snd_soc_card snd_soc_card_imx_cs4244 = {
++	.name = "cs4244-audio",
++	.dai_link = imx_cs4244_dai,
++	.dapm_widgets = imx_cs4244_dapm_widgets,
++	.num_dapm_widgets = ARRAY_SIZE(imx_cs4244_dapm_widgets),
++	.dapm_routes = audio_map,
++	.num_dapm_routes = ARRAY_SIZE(audio_map),
++	.owner = THIS_MODULE,
++};
++
++/*
++ * This function will register the snd_soc_pcm_link drivers.
++ */
++static int imx_cs4244_probe(struct platform_device *pdev)
++{
++	struct device_node *sai_np, *codec_np;
++	struct device_node *asrc_np = NULL;
++	struct platform_device *sai_pdev;
++	struct platform_device *asrc_pdev = NULL;
++	struct i2c_client *codec_dev;
++	struct imx_priv *priv = &card_priv;
++	struct clk *codec_clk = NULL;
++	int ret;
++	u32 width;
++
++	priv->pdev = pdev;
++	priv->asrc_pdev = NULL;
++
++	sai_np = of_parse_phandle(pdev->dev.of_node, "sai-controller", 0);
++	codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
++	if (!sai_np || !codec_np) {
++		dev_err(&pdev->dev, "phandle missing or invalid\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++
++	asrc_np = of_parse_phandle(pdev->dev.of_node, "asrc-controller", 0);
++	if (asrc_np) {
++		asrc_pdev = of_find_device_by_node(asrc_np);
++		priv->asrc_pdev = asrc_pdev;
++	}
++
++	sai_pdev = of_find_device_by_node(sai_np);
++	if (!sai_pdev) {
++		dev_err(&pdev->dev, "failed to find sai platform device\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++	codec_dev = of_find_i2c_device_by_node(codec_np);
++	if (!codec_dev || !codec_dev->dev.driver) {
++		dev_err(&pdev->dev, "failed to find codec platform device\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++
++	/*if there is no asrc controller, we only enable one device*/
++	if (!asrc_pdev) {
++		imx_cs4244_dai[0].codec_of_node   = codec_np;
++		imx_cs4244_dai[0].cpu_dai_name    = dev_name(&sai_pdev->dev);
++		imx_cs4244_dai[0].platform_of_node = sai_np;
++		snd_soc_card_imx_cs4244.num_links = 1;
++	} else {
++		imx_cs4244_dai[0].codec_of_node   = codec_np;
++		imx_cs4244_dai[0].cpu_dai_name    = dev_name(&sai_pdev->dev);
++		imx_cs4244_dai[0].platform_of_node = sai_np;
++		imx_cs4244_dai[1].cpu_of_node    = asrc_np;
++		imx_cs4244_dai[1].platform_of_node   = asrc_np;
++		imx_cs4244_dai[2].codec_of_node   = codec_np;
++		imx_cs4244_dai[2].cpu_dai_name    = dev_name(&sai_pdev->dev);
++		snd_soc_card_imx_cs4244.num_links = 3;
++
++		ret = of_property_read_u32(asrc_np, "fsl,asrc-rate",
++						&priv->asrc_rate);
++		if (ret) {
++			dev_err(&pdev->dev, "failed to get output rate\n");
++			ret = -EINVAL;
++			goto fail;
++		}
++
++		ret = of_property_read_u32(asrc_np, "fsl,asrc-width", &width);
++		if (ret) {
++			dev_err(&pdev->dev, "failed to get output rate\n");
++			ret = -EINVAL;
++			goto fail;
++		}
++
++		if (width == 24)
++			priv->asrc_format = SNDRV_PCM_FORMAT_S24_LE;
++		else
++			priv->asrc_format = SNDRV_PCM_FORMAT_S16_LE;
++	}
++
++	codec_clk = devm_clk_get(&codec_dev->dev, NULL);
++	if (IS_ERR(codec_clk)) {
++		ret = PTR_ERR(codec_clk);
++		dev_err(&codec_dev->dev, "failed to get codec clk: %d\n", ret);
++		goto fail;
++	}
++	priv->mclk_freq = clk_get_rate(codec_clk);
++
++	priv->is_codec_master = false;
++	if (of_property_read_bool(pdev->dev.of_node, "codec-master"))
++		priv->is_codec_master = true;
++
++	snd_soc_card_imx_cs4244.dev = &pdev->dev;
++
++	platform_set_drvdata(pdev, &snd_soc_card_imx_cs4244);
++
++	ret = snd_soc_register_card(&snd_soc_card_imx_cs4244);
++	if (ret)
++		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
++fail:
++	if (asrc_np)
++		of_node_put(asrc_np);
++	if (sai_np)
++		of_node_put(sai_np);
++	if (codec_np)
++		of_node_put(codec_np);
++	return ret;
++}
++
++static int imx_cs4244_remove(struct platform_device *pdev)
++{
++	snd_soc_unregister_card(&snd_soc_card_imx_cs4244);
++	return 0;
++}
++
++static const struct of_device_id imx_cs4244_dt_ids[] = {
++	{ .compatible = "fsl,imx-audio-cs4244", },
++	{ /* sentinel */ }
++};
++
++static struct platform_driver imx_cs4244_driver = {
++	.probe = imx_cs4244_probe,
++	.remove = imx_cs4244_remove,
++	.driver = {
++		.name = "imx-cs4244",
++		.pm = &snd_soc_pm_ops,
++		.of_match_table = imx_cs4244_dt_ids,
++	},
++};
++module_platform_driver(imx_cs4244_driver);
++
++MODULE_AUTHOR("Freescale Semiconductor, Inc.");
++MODULE_DESCRIPTION("ALSA SoC cs4244 Machine Layer Driver");
++MODULE_ALIAS("platform:imx-cs4244");
++MODULE_LICENSE("GPL");
+-- 
+1.9.1
+

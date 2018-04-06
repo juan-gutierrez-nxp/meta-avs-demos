@@ -1,0 +1,141 @@
+From 09ff5b1631971cadb1f5cc9f1482b92930d9a7b5 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Thu, 15 Mar 2018 00:34:33 +0000
+Subject: [PATCH 13/15] SPH: change to 2 channels
+
+---
+ sound/soc/codecs/sph0645.c  |  4 +---
+ sound/soc/fsl/imx-sph0645.c | 20 ++++----------------
+ 2 files changed, 5 insertions(+), 19 deletions(-)
+
+diff --git a/sound/soc/codecs/sph0645.c b/sound/soc/codecs/sph0645.c
+index cdc012d..6cc562d 100644
+--- a/sound/soc/codecs/sph0645.c
++++ b/sound/soc/codecs/sph0645.c
+@@ -29,7 +29,7 @@
+ 	.capture = {
+ 		.stream_name = "Capture",
+ 		.channels_min = 1,
+-		.channels_max = 8,
++		.channels_max = 2,
+ 		.rate_min = SPH0645_RATE_MIN,
+ 		.rate_max = SPH0645_RATE_MAX,
+ 		.rates = SNDRV_PCM_RATE_CONTINUOUS,
+@@ -43,8 +43,6 @@
+ static int sph0645_probe(struct platform_device *pdev)
+ {
+ 
+-	pr_info("sph0645_probe\n");
+-
+ 	return snd_soc_register_codec(&pdev->dev, &sph0645_codec_driver,
+ 			&sph0645_dai, 1);
+ }
+diff --git a/sound/soc/fsl/imx-sph0645.c b/sound/soc/fsl/imx-sph0645.c
+index 46c283b..160666f 100644
+--- a/sound/soc/fsl/imx-sph0645.c
++++ b/sound/soc/fsl/imx-sph0645.c
+@@ -59,8 +59,6 @@ static int imx_sph0645_startup(struct snd_pcm_substream *substream)
+ 		snd_soc_card_get_drvdata(soc_card);
+ 	int ret;
+ 
+-	pr_info("\n");
+-
+ 	ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
+ 			SNDRV_PCM_HW_PARAM_RATE, &imx_sph0645_rate_constraints);
+ 	if (ret)
+@@ -79,7 +77,6 @@ static void imx_sph0645_shutdown(struct snd_pcm_substream *substream)
+ 	struct snd_soc_card_drvdata_imx_tfa *drvdata =
+ 		snd_soc_card_get_drvdata(soc_card);
+ 
+-	pr_info("\n");
+ 	if (drvdata->mclk)
+ 		clk_disable_unprepare(drvdata->mclk);
+ }
+@@ -96,7 +93,7 @@ static int imx_sph0645_hw_params(struct snd_pcm_substream *substream,
+ 	int ret = 0;
+ 
+ 	/* set cpu DAI configuration SND_SOC_DAIFMT_I2S*/
+-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_DSP_A
++	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S
+ 			| SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
+ 	if (ret) {
+ 		dev_err(cpu_dai->dev, "failed to set cpu dai fmt\n");
+@@ -109,9 +106,6 @@ static int imx_sph0645_hw_params(struct snd_pcm_substream *substream,
+ 		return ret;
+ 	}
+ 
+-	/* set i.MX active slot mask */
+-	snd_soc_dai_set_tdm_slot(cpu_dai, 0x0, 0x0, 8, 32);
+-
+ 
+ 	return ret;
+ }
+@@ -136,7 +130,6 @@ static int imx_sph0645_trigger(struct snd_pcm_substream *stream, int cmd)
+ 		snd_soc_card_get_drvdata(rtd->card);
+ 	int ret = 0;
+ 
+-	pr_info("\n");
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+ 		if (stream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+@@ -178,7 +171,6 @@ static int imx_sph0645_init(struct snd_soc_pcm_runtime *rtd)
+ 	struct snd_soc_card_drvdata_imx_tfa *data = snd_soc_card_get_drvdata(rtd->card);;
+ 	struct device *dev = rtd->card->dev;
+ 
+-	pr_info("\n");
+ 	dev_dbg(rtd->card->dev, "%s,%d: dai_init\n", __FUNCTION__, __LINE__);
+ 
+ 	return 0;
+@@ -188,7 +180,6 @@ static void *tfa_devm_kstrdup(struct device *dev, char *buf)
+ {
+ 	char *str = devm_kzalloc(dev, strlen(buf) + 1, GFP_KERNEL);
+ 
+-	pr_info("\n");
+ 	if (!str)
+ 		return str;
+ 	memcpy(str, buf, strlen(buf));
+@@ -252,8 +243,6 @@ static int imx_sph0645_probe(struct platform_device *pdev)
+ 	int ret = 0;
+ 	int i, num_codecs;
+ 
+-	pr_info("imx_sph0645_probe\n");
+-
+ 	imx_sph0645_soc_card.dev = &pdev->dev;
+ 
+ 	cpu_np = of_parse_phandle(pdev->dev.of_node, "cpu-dai", 0);
+@@ -277,7 +266,6 @@ static int imx_sph0645_probe(struct platform_device *pdev)
+ 		ret = -EINVAL;
+ 		goto fail;
+ 	}
+-	pr_info("Found %d codec(s)\n", num_codecs);
+ 
+ 	codecs = devm_kzalloc(&pdev->dev,
+ 			sizeof(struct snd_soc_dai_link_component) * num_codecs,
+@@ -346,13 +334,14 @@ static int imx_sph0645_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
+ 
+-	pr_info("done\n");
+ 	return ret;
+ fail:
++#if 0
+ 	if (cpu_np)
+ 		of_node_put(cpu_np);
+ 	if (codecs)
+-		of_node_put(codecs[0].of_node);
++		of_node_put(codecs);
++#endif
+ 
+ 	return ret;
+ }
+@@ -363,7 +352,6 @@ static int imx_sph0645_remove(struct platform_device *pdev)
+ 	struct snd_soc_card_drvdata_imx_tfa *drvdata =
+ 				snd_soc_card_get_drvdata(card);
+ 
+-	pr_info("\n");
+ 
+ 	if (drvdata->mclk)
+ 		clk_disable(drvdata->mclk);
+-- 
+1.9.1
+

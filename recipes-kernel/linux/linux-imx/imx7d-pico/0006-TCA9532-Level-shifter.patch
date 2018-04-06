@@ -1,0 +1,44 @@
+From e754a8a1123880d1965da8df62facac260e35226 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Tue, 13 Feb 2018 00:00:50 +0000
+Subject: [PATCH 06/15] TCA9532 Level shifter
+
+---
+ drivers/gpio/gpio-pca953x.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/gpio/gpio-pca953x.c b/drivers/gpio/gpio-pca953x.c
+index f645dbd..d9ca2ad 100644
+--- a/drivers/gpio/gpio-pca953x.c
++++ b/drivers/gpio/gpio-pca953x.c
+@@ -15,6 +15,7 @@
+ #include <linux/init.h>
+ #include <linux/gpio.h>
+ #include <linux/interrupt.h>
++#include <linux/delay.h>
+ #include <linux/i2c.h>
+ #include <linux/platform_data/pca953x.h>
+ #include <linux/reset.h>
+@@ -79,6 +80,7 @@
+ 	{ "tca6408", 8  | PCA953X_TYPE | PCA_INT, },
+ 	{ "tca6416", 16 | PCA953X_TYPE | PCA_INT, },
+ 	{ "tca6424", 24 | PCA953X_TYPE | PCA_INT, },
++	{ "tca9535", 16 | PCA953X_TYPE | PCA_INT, },
+ 	{ "tca9539", 16 | PCA953X_TYPE | PCA_INT, },
+ 	{ "xra1202", 8  | PCA953X_TYPE },
+ 	{ }
+@@ -823,6 +825,11 @@ static int pca953x_probe(struct i2c_client *client,
+ 	 */
+ 	pca953x_setup_gpio(chip, chip->driver_data & PCA_GPIO_MASK);
+ 
++        i2c_smbus_write_byte_data(chip->client,0x06, 0xef);
++        i2c_smbus_write_byte_data(chip->client,0x02, 0xee);
++        mdelay(20);
++        i2c_smbus_write_byte_data(chip->client,0x02, 0xfe);
++
+ 	if (chip->gpio_chip.ngpio <= 8) {
+ 		chip->write_regs = pca953x_write_regs_8;
+ 		chip->read_regs = pca953x_read_regs_8;
+-- 
+1.9.1
+

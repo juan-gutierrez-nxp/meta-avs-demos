@@ -1,0 +1,25 @@
+From 756b62b1a4af0bd12ab32cfd16de43ebeb98fb21 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Thu, 15 Mar 2018 00:35:51 +0000
+Subject: [PATCH 15/15] SND_LOOP: Enable ALSA Sosund Loopback device
+
+---
+ arch/arm/configs/tn_imx_defconfig | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/tn_imx_defconfig b/arch/arm/configs/tn_imx_defconfig
+index ecec11f..9b87fae 100644
+--- a/arch/arm/configs/tn_imx_defconfig
++++ b/arch/arm/configs/tn_imx_defconfig
+@@ -457,5 +457,7 @@ CONFIG_LIBCRC32C=m
+ CONFIG_FONTS=y
+ CONFIG_SND_SOC_MP34DT01=y
+ CONFIG_SND_SOC_IMX_MP34DT01=y
+-CONFIG_SND_SOC_IMX_SPH0645=m
++CONFIG_SND_SOC_IMX_SPH0645=y
+ CONFIG_SND_SOC_IMX_CS4244=m
++CONFIG_SND_SOC_IMX_TFA98XX=y
++CONFIG_SND_ALOOP=y
+-- 
+1.9.1
+

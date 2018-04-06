@@ -1,0 +1,51 @@
+From e83513a7c38f2f1d53baae004302b0eadeb9e0d5 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Tue, 13 Feb 2018 00:03:06 +0000
+Subject: [PATCH 08/15] Trigger SAI before any change to CODEC. Some codecs
+ need Audio input before turning on DAC
+
+---
+ sound/soc/soc-pcm.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/sound/soc/soc-pcm.c b/sound/soc/soc-pcm.c
+index 70f8eab..2379992 100644
+--- a/sound/soc/soc-pcm.c
++++ b/sound/soc/soc-pcm.c
+@@ -1020,16 +1020,6 @@ static int soc_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+ 	struct snd_soc_dai *codec_dai;
+ 	int i, ret;
+ 
+-	for (i = 0; i < rtd->num_codecs; i++) {
+-		codec_dai = rtd->codec_dais[i];
+-		if (codec_dai->driver->ops && codec_dai->driver->ops->trigger) {
+-			ret = codec_dai->driver->ops->trigger(substream,
+-							      cmd, codec_dai);
+-			if (ret < 0)
+-				return ret;
+-		}
+-	}
+-
+ 	if (platform->driver->ops && platform->driver->ops->trigger) {
+ 		ret = platform->driver->ops->trigger(substream, cmd);
+ 		if (ret < 0)
+@@ -1048,6 +1038,16 @@ static int soc_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+ 			return ret;
+ 	}
+ 
++	for (i = 0; i < rtd->num_codecs; i++) {
++		codec_dai = rtd->codec_dais[i];
++		if (codec_dai->driver->ops && codec_dai->driver->ops->trigger) {
++			ret = codec_dai->driver->ops->trigger(substream,
++							      cmd, codec_dai);
++			if (ret < 0)
++				return ret;
++		}
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+1.9.1
+

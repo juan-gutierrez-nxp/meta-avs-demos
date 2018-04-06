@@ -1,0 +1,34 @@
+From f48cc1891ccf2c1fde4dbc8116318f81e8ea9a93 Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Tue, 13 Feb 2018 00:02:27 +0000
+Subject: [PATCH 07/15] Allow SAI to be bound to more than one cards
+
+---
+ sound/soc/soc-core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index c0bbcd9..bf3c6a3 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -1371,7 +1371,7 @@ static int soc_probe_component(struct snd_soc_card *card,
+ 
+ 	if (!strcmp(component->name, "snd-soc-dummy"))
+ 		return 0;
+-
++#if 0
+ 	if (component->card) {
+ 		if (component->card != card) {
+ 			dev_err(component->dev,
+@@ -1381,7 +1381,7 @@ static int soc_probe_component(struct snd_soc_card *card,
+ 		}
+ 		return 0;
+ 	}
+-
++#endif
+ 	if (!try_module_get(component->dev->driver->owner))
+ 		return -ENODEV;
+ 
+-- 
+1.9.1
+

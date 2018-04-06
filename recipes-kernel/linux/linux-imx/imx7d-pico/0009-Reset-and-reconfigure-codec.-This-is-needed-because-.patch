@@ -1,0 +1,64 @@
+From 531bd57e481cfbeae3e0dc30f437550ec171f91c Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Tue, 13 Feb 2018 16:27:58 +0000
+Subject: [PATCH 09/15] Reset and reconfigure codec. This is needed because
+ CODEC needs MCLK at all time. SAI generates MCLK only when sending data.
+
+---
+ sound/soc/codecs/cs4244.c | 21 ++++++---------------
+ 1 file changed, 6 insertions(+), 15 deletions(-)
+
+diff --git a/sound/soc/codecs/cs4244.c b/sound/soc/codecs/cs4244.c
+index 449d5e5..d19e470 100644
+--- a/sound/soc/codecs/cs4244.c
++++ b/sound/soc/codecs/cs4244.c
+@@ -306,11 +306,9 @@ static int cs4244_digital_mute(struct snd_soc_dai *dai, int mute)
+ static const struct snd_soc_dai_ops cs4244_dai_ops = {
+ 	.set_fmt	= cs4244_set_dai_fmt,
+ 	.set_sysclk	= cs4244_set_dai_sysclk,
+-	.hw_params	= cs4244_hw_params,
+ 	.trigger 	= cs4244_trigger,
+ 	.hw_free	= cs4244_hw_free,
+ 	.digital_mute	= cs4244_digital_mute,
+-	.startup	= cs4244_startup,
+ };
+ 
+ static struct snd_soc_dai_driver cs4244_dai = {
+@@ -321,15 +319,6 @@ static int cs4244_digital_mute(struct snd_soc_dai *dai, int mute)
+ 		.rates = SNDRV_PCM_RATE_8000_96000,
+ 		.formats = CS4244_FORMATS,
+ 	},
+-#if 0
+-	.capture = {
+-		.stream_name = "Capture",
+-		.channels_min = 1,
+-		.rates = SNDRV_PCM_RATE_8000_192000,
+-		.formats = CS4244_FORMATS,
+-	},
+-
+-#endif
+ 	.ops = &cs4244_dai_ops,
+ };
+ 
+@@ -472,12 +461,14 @@ static void regmap_handler(struct work_struct *work)
+ 	{
+ 	case SNDRV_PCM_TRIGGER_START:
+ 
+-	//regmap_update_bits(cs4244->regmap,CS4244_DACCTL4,0x0f, 0x1f);
+-        /*PDN DAC*/
+-        //regmap_update_bits(cs4244->regmap,CS4244_DACCTL3,0x0f, 0xbf);	
+ 
++	//Reset Codec
++	gpiod_set_value_cansleep(cs4244->gpio_nreset, 1);
++	mdelay(2);
++	gpiod_set_value_cansleep(cs4244->gpio_nreset, 0);
++	//Configure x256
++	regmap_write(cs4244->regmap, CS4244_MCLK_SPD, 0x30); 	
+ 
+-	//mdelay(100);
+ 	/*Mute DAC*/
+ 	regmap_write(cs4244->regmap,CS4244_DACCTL4,0x10);	
+ 
+-- 
+1.9.1
+

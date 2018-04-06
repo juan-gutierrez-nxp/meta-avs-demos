@@ -1,0 +1,23 @@
+From 52fbbf5f55a0d89c30f20c0952c713140c211dbb Mon Sep 17 00:00:00 2001
+From: Alejandro Lozano <alejandro.lozano@nxp.com>
+Date: Wed, 14 Feb 2018 00:01:18 +0000
+Subject: [PATCH 10/15] Generate SPH0645 as loadable module.
+
+---
+ arch/arm/configs/tn_imx_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/tn_imx_defconfig b/arch/arm/configs/tn_imx_defconfig
+index 8d0667c..ecec11f 100644
+--- a/arch/arm/configs/tn_imx_defconfig
++++ b/arch/arm/configs/tn_imx_defconfig
+@@ -457,5 +457,5 @@ CONFIG_LIBCRC32C=m
+ CONFIG_FONTS=y
+ CONFIG_SND_SOC_MP34DT01=y
+ CONFIG_SND_SOC_IMX_MP34DT01=y
+-CONFIG_SND_SOC_IMX_SPH0645=y
++CONFIG_SND_SOC_IMX_SPH0645=m
+ CONFIG_SND_SOC_IMX_CS4244=m
+-- 
+1.9.1
+
