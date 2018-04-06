@@ -9,12 +9,14 @@ SRC_URI_append = " \
     file://no_sensory \
     file://dspc \
     file://getDSPCSoftware.sh \
+    file://startAwe.sh \
 "
 
 do_install_append() {
     install -d -m 0755 ${D}${DEST_SCRIPTS_DIR}
     install -d -m 0755 ${D}${DEST_ETC_DIR}
     install ${S}/getDSPCSoftware.sh ${D}${DEST_SCRIPTS_DIR}
+    install ${S}/startAwe.sh ${D}${DEST_SCRIPTS_DIR}
     install ${S}/no_sensory ${D}${DEST_ETC_DIR}
     install ${S}/dspc ${D}${DEST_ETC_DIR}
 }

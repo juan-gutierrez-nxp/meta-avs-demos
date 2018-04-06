@@ -1,6 +1,7 @@
 AVS_CONF="/etc/alexa_sdk/avs.conf"
 SENSORY_FILE="/usr/lib/sensory-alexa/lib/libsnsr.a"
 NO_SENSORY_REQUIRED="/etc/alexa_sdk/no_sensory"
+DSP_CONCEPTS="/etc/alexa_sdk/dspc"
 
 while [ ! -d "/etc/alexa_sdk/booted" ]
 do
@@ -58,6 +59,12 @@ do
    fi
   fi
  fi
+ 
+ if [ -e $DSP_CONCEPTS ]
+ then
+     /home/root/Alexa_SDK/Scripts/getDSPCSoftware.sh
+ fi
+
  echo ""
  echo ""
  echo "====================================================================== "
@@ -81,6 +88,13 @@ echo " Done!!! You are now ready to start with Alexa SDK for NXP Pico Pi     "
 echo ""
 echo " To run the SampleApp: "
 echo " "
+ if [ -e $DSP_CONCEPTS ]
+ then
+  echo "   ~/Alexa_SDK/Scripts/startAwe.sh                                     "
+  echo ""
+  echo " And in a separate console (like by ssh), run:                         "
+  echo ""
+ fi
 echo "   cd ~/Alexa_SDK/avs-sdk-client/SampleApp/src/                          "
 echo ""
 if [ -e $SENSORY_FILE ]

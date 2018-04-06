@@ -3,6 +3,8 @@
 sleep 1
 
 SENSORY_FILE="/usr/lib/sensory-alexa/lib/libsnsr.a"
+NO_SENSORY_REQUIRED="/etc/alexa_sdk/no_sensory"
+DSP_CONCEPTS="/etc/alexa_sdk/dspc"
 
 echo ""
 echo "================================================================================"
@@ -55,18 +57,25 @@ then
   echo ""
   echo "================================================================================="
 else 
-  echo " You are all set                                                       "
-  echo " - To run AVS Sample APP:                                              "
+  echo " You are all set                                                        "
+  echo " - To run AVS Sample APP:                                               "
   echo " "
-  echo "   cd ~/Alexa_SDK/avs-sdk-client/SampleApp/src/                          "
+ if [ -e $DSP_CONCEPTS ]
+ then
+  echo "   ~/Alexa_SDK/Scripts/startAwe.sh                                                          "
+  echo ""
+  echo " And in a separate console (like by ssh), run:                                          "
+  echo ""
+ fi
+  echo "   cd ~/Alexa_SDK/avs-sdk-client/SampleApp/src/                         "
   echo ""
  if [ -e $SENSORY_FILE ]
  then
-  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \      "
-  echo "   ../../Integration/inputs/SensoryModels/ DEBUG9                        "
+  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \     "
+  echo "   ../../Integration/inputs/SensoryModels/ DEBUG9                       "
  else
-  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \    "
-  echo "   DEBUG9                                                              "
+  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \     "
+  echo "   DEBUG9                                                               "
  fi
   echo ""
 fi
