@@ -244,13 +244,15 @@ SOUNDCARD="SGTL"
 while true; do
     echo " Which Sound Card are you going to use? "
     echo ""
-    echo " Sigmatel ..........................  1"
-    echo " Synaptics/Conexant ................  2"
+    echo " Sigmatel ..............................  1"
+    echo " Synaptics/Conexant ....................  2"
+    echo " VoiceHat (for DSPConcepts SW) .........  3"
     echo ""
     read -p "Type the number of your selection and press Enter... " usrInput
     case $usrInput in
         [1]* ) SOUNDCARD="SGTL" break;;
         [2]* ) SOUNDCARD="CONEXANT"; break;;
+        [3]* ) SOUNDCARD="VOICEHAT"; break;;
            * ) ;;
     esac
 done
@@ -327,6 +329,14 @@ if [ $SOUNDCARD == "SGTL" ]; then
     echo "" >> $BUILD_DIR/conf/local.conf
 fi
 
+if [ $SOUNDCARD == "VOICEHAT" ]; then
+    echo "" >> $BUILD_DIR/conf/local.conf
+    echo "#Enable the TechNexion 2Mics Voice Hat Sound Card for DSPConcepts" >> $BUILD_DIR/conf/local.conf
+    echo "MACHINEOVERRIDES =. \"imx7d-pico-voicehat:\"" >> $BUILD_DIR/conf/local.conf
+    echo "KERNEL_DEVICETREE = \"imx7d-pico_pi-hat.dtb\"" >> $BUILD_DIR/conf/local.conf
+    echo "SOUNDCARD = \"voicehat\"" >> $BUILD_DIR/conf/local.conf
+    echo "" >> $BUILD_DIR/conf/local.conf
+fi
 
 if [ $BUILD_WIFI == 1 ]; then
     echo "" >> $BUILD_DIR/conf/local.conf
@@ -373,6 +383,9 @@ echo " - Sound Card = Synaptics                                    "
 fi
 if [ $SOUNDCARD == "SGTL" ]; then
 echo " - Sound Card = Sigmatel                                     "
+fi
+if [ $SOUNDCARD == "VOICEHAT" ]; then
+echo " - Sound Card = 2Mics Voice Hat (for DSPC)                   "
 fi
 if [ $BUILD_ALEXA_SDK == 1 ]; then
 echo " - Alexa SDK $ALEXA_VERSION pre-installed                    "
