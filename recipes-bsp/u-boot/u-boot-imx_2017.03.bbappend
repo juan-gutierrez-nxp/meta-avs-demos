@@ -17,4 +17,8 @@ SRC_URI_append_imx7d-pico-conexant += " \
     file://pico-imx7-set-baseboard-to-pico-pi-on-uboot-environm.patch \
 "
 
+SRC_URI_append_imx7d-pico-voicehat += " \
+    file://pico-imx7-set-baseboard-to-pico-pi-hat-on-uboot-environm.patch \
+"
+
 COMPATIBLE_MACHINE = "(imx7d-pico)"

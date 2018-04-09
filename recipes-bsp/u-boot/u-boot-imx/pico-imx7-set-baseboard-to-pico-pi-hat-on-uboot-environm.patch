@@ -1,0 +1,40 @@
+From ec05aaf1e873cc3f1a802996861704948d632773 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Thu, 11 Jan 2018 00:22:32 +0000
+Subject: [PATCH] pico-imx7: set baseboard to pi-hat on uboot environment
+
+Setting baseboard as pico-hat will select the pico-pi-hat dtb
+when booting kernel
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ board/technexion/pico-imx7d/uEnv.txt | 2 +-
+ include/configs/pico-imx7d.h         | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/board/technexion/pico-imx7d/uEnv.txt b/board/technexion/pico-imx7d/uEnv.txt
+index 746beb3..b4b63d1 100644
+--- a/board/technexion/pico-imx7d/uEnv.txt
++++ b/board/technexion/pico-imx7d/uEnv.txt
+@@ -1,4 +1,4 @@
+ mmcargs=setenv bootargs console=${console},${baudrate} root=${mmcroot}
+-baseboard=hobbit
++baseboard=pi
+ bootcmd_mmc=run loadimage;run mmcboot;
+ uenvcmd=run bootcmd_mmc
+diff --git a/include/configs/pico-imx7d.h b/include/configs/pico-imx7d.h
+index dadead2..1600060 100644
+--- a/include/configs/pico-imx7d.h
++++ b/include/configs/pico-imx7d.h
+@@ -196,7 +196,7 @@
+ 	"console=ttymxc4\0" \
+ 	"splashpos=m,m\0" \
+ 	"som=imx7d-pico\0" \
+-	"baseboard=hobbit\0" \
++	"baseboard=pi-hat\0" \
+ 	"default_baseboard=hobbit\0" \
+ 	"fdt_high=0xffffffff\0" \
+ 	"initrd_high=0xffffffff\0" \
+-- 
+1.9.1
+
