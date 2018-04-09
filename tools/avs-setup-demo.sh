@@ -138,6 +138,9 @@ fi
 
 # copy new EULA into community so setup uses latest i.MX EULA
 cp sources/meta-fsl-bsp-release/imx/EULA.txt sources/meta-freescale/EULA
+cp sources/meta-avs-demos/tools/image_types_picopi.bbclass sources/meta-fsl-bsp-release/imx/meta-bsp/classes/
+cp sources/meta-avs-demos/tools/imx-picopi-base.inc sources/meta-freescale/conf/machine/include/imx-picopi-base.inc
+
 
 # Delete upstream machine and bbclass files that we have modified
 machine_roots="sources/meta-fsl-bsp-release/imx/meta-bsp/conf/machine"
@@ -336,6 +339,7 @@ if [ $SOUNDCARD == "VOICEHAT" ]; then
     echo "KERNEL_DEVICETREE = \"imx7d-pico_pi-hat.dtb\"" >> $BUILD_DIR/conf/local.conf
     echo "SOUNDCARD = \"voicehat\"" >> $BUILD_DIR/conf/local.conf
     echo "" >> $BUILD_DIR/conf/local.conf
+	echo "BBLAYERS += \" \${BSPDIR}/sources/meta-avs-demos/meta-avs-dspc \"" >> $BUILD_DIR/conf/bblayers.conf
 fi
 
 if [ $BUILD_WIFI == 1 ]; then
