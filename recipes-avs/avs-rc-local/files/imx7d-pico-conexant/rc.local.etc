@@ -14,9 +14,6 @@
 
 echo 30000 >  /proc/sys/vm/min_free_kbytes
 
-#Set Volume to AVS
-amixer cset numid=5 127,127 > /dev/null
-amixer cset numid=7 3 > /dev/null
 
 # Disbale pulseAudio due to conflicts with AVS
 if [ -f /usr/bin/pulseaudio ]; then
@@ -26,6 +23,12 @@ fi
 # Enable Ethernet
 ifconfig eth0 up
 timeout 10s udhcpc > /dev/null
+
+sleep 3
+
+#Set Volume to AVS
+amixer cset numid=5 127,127 > /dev/null
+amixer cset numid=7 3 > /dev/null
 
 exit 0
 
