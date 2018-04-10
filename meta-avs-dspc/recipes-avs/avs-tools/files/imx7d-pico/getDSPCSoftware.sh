@@ -12,6 +12,11 @@ then
     rm -r /home/root/sensory_files
 fi
 
+if [ -d "/home/root/audioweaver" ]
+then
+    rm -r /home/root/audioweaver
+fi
+
 
 git clone https://github.com/rhilles-dspc/dspc-nxp-imx7-2micVoiceUI
 cd dspc-nxp-imx7-2micVoiceUI
