@@ -288,19 +288,19 @@ done
 
 
 if [ $BUILD_WIFI == 1 ]; then
-   if [ ! -d ${BSPDIR}/sources/meta-avs-picopi-wifi ]; then
+   if [ ! -d ${BSPDIR}/sources/meta-picopi-wifi ]; then
        BUILD_WIFI=0
        RED='\033[0;31m'
        NC='\033[0m' # No Color
        echo -e "${RED}"
        echo "============================================================= "
-       echo " WARNING: meta-avs-picopi-wifi layer needs to be included on  "
+       echo " WARNING: meta-picopi-wifi layer needs to be included on  "
        echo " the sources directory to be able to include WiFi Support     "
        echo " on this image. Please Contact NXP to get the meta layer.     "
        echo "============================================================= "
        echo -e "${NC}"
     else
-       echo "BBLAYERS += \" \${BSPDIR}/sources/meta-avs-picopi-wifi \"" >> $BUILD_DIR/conf/bblayers.conf
+       echo "BBLAYERS += \" \${BSPDIR}/sources/meta-picopi-wifi \"" >> $BUILD_DIR/conf/bblayers.conf
     fi
 fi
 
