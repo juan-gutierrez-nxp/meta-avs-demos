@@ -28,7 +28,8 @@ sleep 3
 
 #Set Volume to AVS
 amixer cset numid=5 127,127 > /dev/null
-amixer cset numid=7 3 > /dev/null
+amixer cset numid=2 12,12 > /dev/null
+amixer cset numid=8 3 > /dev/null
 
 exit 0
 
