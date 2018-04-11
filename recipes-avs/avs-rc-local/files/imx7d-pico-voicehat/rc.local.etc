@@ -19,12 +19,14 @@ if [ -f /usr/bin/pulseaudio ]; then
 	mv /usr/bin/pulseaudio /usr/bin/pulseaudio.disabled
 fi
 
+sleep 7
+
+insmod /home/root/snd-soc-tfa98xx.ko fw_name="TFA9892N1A_stereo_32FS.cnt" trace_level=1 dflt_prof_name="dsp_bypass_P" dflt_prof_name2="dsp_bypass_S"
+sleep 1
+amixer cset numid=1 6
+
 # Enable Ethernet
 ifconfig eth0 up
 timeout 10s udhcpc > /dev/null
-
-insmod /home/root/snd-soc-tfa98xx.ko fw_name="TFA9892N1A_stereo_32FS.cnt" trace_level=1 dflt_prof_name="dsp_bypass_P" dflt_prof_name2="dsp_bypass_S"
-sleep 3
-amixer cset numid=1 6
 
 exit 0

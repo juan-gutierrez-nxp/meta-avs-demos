@@ -20,16 +20,17 @@ if [ -f /usr/bin/pulseaudio ]; then
 	mv /usr/bin/pulseaudio /usr/bin/pulseaudio.disabled
 fi
 
-# Enable Ethernet
-ifconfig eth0 up
-timeout 10s udhcpc > /dev/null
-
-sleep 3
+sleep 7
 
 #Set Volume to AVS
 amixer cset numid=5 127,127 > /dev/null
 amixer cset numid=2 12,12 > /dev/null
 amixer cset numid=8 3 > /dev/null
+
+# Enable Ethernet
+ifconfig eth0 up
+timeout 10s udhcpc > /dev/null
+
 
 exit 0
 
