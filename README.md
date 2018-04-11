@@ -20,7 +20,7 @@ enviroment.
 Let's call this as <yocto_dir>
 
     $ cd <yocto_dir>
-    $ repo init -u https://source.codeaurora.org/external/imxsupport/meta-avs-demos -b master -m imx7d-pico-avs-sdk_4.1.15-1.0.0.xml
+    $ repo init -u https://source.codeaurora.org/external/imxsupport/meta-avs-demos -b master -m imx-alexa-sdk-4.9.11.xml
 
 #### Download the AVS BSP build environment:
 
@@ -43,14 +43,16 @@ The following Sound Cards are supported on the build:
 
 * SGTL (In-board Audio Codec for PicoPi)
 * 2-Mic Conexant
+* 2-Mic TechNexion Voice Hat (with DSPConcepts SW)
 
 The script will prompt to select the soundcard you will be using:
 
 
-    Which Sound Card are you going to use?
+     Which Sound Card are you going to use?
 
-    Sigmatel ..........................  1
-    Synaptics/Conexant ................  2
+     Sigmatel ..............................  1
+     Synaptics/Conexant ....................  2
+     VoiceHat (for DSPConcepts SW) .........  3
 
     Type the number of your selection and press Enter...
 
@@ -72,7 +74,7 @@ only fetching the AVS_SDK source code and building it is required.
 
 #### Install WiFi support
 
-Te WiFi support is optional and requires to get from NXP an additional meta-avs-demos-wifi layer.
+Te WiFi support is optional and requires to get from NXP an additional meta-picopi-wifi layer.
 Contact NXP to get this layer to be able to support WiFi on your image
 
 The image will prompt:
