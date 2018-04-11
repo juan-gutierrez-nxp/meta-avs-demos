@@ -23,8 +23,9 @@ do
  echo ""
  echo ""
 
- timeout 10s udhcpc > /dev/null
- if [ $? -eq 124 ]
+ NETIF=$(route | grep '^default' | grep -o '[^ ]*$')
+ timeout 30s udhcpc -i $NETIF
+ if [ ! $? -eq 0 ]
  then
   echo "====================================================================== "
   echo ""
