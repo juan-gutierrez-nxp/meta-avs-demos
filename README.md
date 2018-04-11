@@ -6,5 +6,11 @@ release for i.MX) that includes the additional required packages to support
 the Amazon's Alexa Voice Services SDK (AVS_SDK) applications.
 
 The build procedure is the described on the README.md of the
-**imx7d-pico-avs-sdk_4.1.15-1.0.0** branch.
+corresponding branch.
+
+We have 2 branches now:
+
+* imx-alexa-sdk: Support for Morty based i.mx releases
+* imx7d-pico-avs-sdk_4.1.15-1.0.0: legacy support for Jethro releases
+
 
