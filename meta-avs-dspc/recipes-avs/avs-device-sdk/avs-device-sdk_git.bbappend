@@ -1,8 +1,5 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-
-SRCREV = "${AUTOREV}"
-
 SRC_URI += " \
 	file://0001-Add-Dummy-Key-Word-Detector.patch \
 	file://0001-SampleApp-Sample-code-patch-to-add-support-for-QT5Di.patch \
