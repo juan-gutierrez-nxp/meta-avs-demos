@@ -11,14 +11,12 @@ DEST_SCRIPTS_DIR ?= "/home/root/Alexa_SDK/Scripts"
 
 inherit systemd
 
-SRC_URI = "file://alexa_sdk \
-		file://cleanAVSEnv.sh \
-		file://getAVSToken.sh \
-		file://renewSensoryLicense.sh \
-		file://setCredentials.sh \
-		file://setupAVS.sh \
-		file://setUTCTime.sh \
-		file://startAVSImage.service \
+SRC_URI = " \
+	file://cleanAVSEnv.sh \
+	file://getAVSToken.sh \
+	file://setCredentials.sh \
+	file://setUTCTime.sh \
+	file://startAVSImage.service \
 "
 
 do_install() {

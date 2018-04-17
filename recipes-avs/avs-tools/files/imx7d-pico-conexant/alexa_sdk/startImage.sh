@@ -3,8 +3,6 @@
 sleep 1
 
 SENSORY_FILE="/usr/lib/sensory-alexa/lib/libsnsr.a"
-NO_SENSORY_REQUIRED="/etc/alexa_sdk/no_sensory"
-DSP_CONCEPTS="/etc/alexa_sdk/dspc"
 
 echo ""
 echo "================================================================================"
@@ -41,41 +39,33 @@ echo "==========================================================================
 
 echo ""
 echo ""
-  echo "================================================================================="
-  echo " Welcome to NXP Pico Pi for AVS SDK                               "
-  echo ""
-
+echo "================================================================================="
+echo " Welcome to NXP Pico Pi for AVS SDK                                     "
+echo ""
 if [ ! -d "/etc/alexa_sdk/booted" ]
 then
-  echo " To setup your AVS Environment:                                   "
-  echo " - Go to Alexa_SDK directory and run the Setup AVS script:        "
-  echo ""
-  echo "      cd ~/Alexa_SDK                                              "
-  echo "      ./setupAVS.sh                                               "
-  echo ""
-  echo "  ** Please enable the Network access by Ethernet/Wifi **         "
-  echo ""
-  echo "================================================================================="
+ echo " To setup your AVS Environment:                                        "
+ echo " - Go to Alexa_SDK directory and run the Setup AVS script:             "
+ echo ""
+ echo "      cd ~/Alexa_SDK                                                   "
+ echo "      ./setupAVS.sh                                                    "
+ echo ""
+ echo "  ** Please enable the Network access by Ethernet/Wifi **              "
+ echo ""
+ echo "================================================================================="
 else 
-  echo " You are all set                                                        "
-  echo " - To run AVS Sample APP:                                               "
-  echo " "
- if [ -e $DSP_CONCEPTS ]
- then
-  echo "   ~/Alexa_SDK/Scripts/startAwe.sh                                                          "
-  echo ""
-  echo " And in a separate console (like by ssh), run:                                          "
-  echo ""
- fi
-  echo "   cd ~/Alexa_SDK/avs-sdk-client/SampleApp/src/                         "
-  echo ""
+ echo " You are all set                                                        "
+ echo " - To run AVS Sample APP:                                               "
+ echo " "
+ echo "   cd ~/Alexa_SDK/avs-sdk-client/SampleApp/src/                         "
+ echo ""
  if [ -e $SENSORY_FILE ]
  then
-  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \     "
-  echo "   ../../Integration/inputs/SensoryModels/ DEBUG9                       "
+  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \   "
+  echo "   ../../Integration/inputs/SensoryModels/ DEBUG9                     "
  else
-  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \     "
-  echo "   DEBUG9                                                               "
+  echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \   "
+  echo "   DEBUG9                                                             "
  fi
   echo ""
 fi
