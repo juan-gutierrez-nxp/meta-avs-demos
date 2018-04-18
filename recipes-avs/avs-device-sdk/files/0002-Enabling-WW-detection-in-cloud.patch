@@ -1,0 +1,75 @@
+From 02831a78ee5845d5ed59a2c005e7870ee3e85d83 Mon Sep 17 00:00:00 2001
+From: Sabeel Syed <sabeel.syed@nxp.com>
+Date: Tue, 10 Apr 2018 14:45:13 -0700
+Subject: [PATCH 2/2] Enabling WW detection in cloud
+
+---
+ KWD/Dummy/src/DummyKeywordDetector.cpp | 39 ++++++++++++++++++++++++++++------
+ 1 file changed, 32 insertions(+), 7 deletions(-)
+
+diff --git a/KWD/Dummy/src/DummyKeywordDetector.cpp b/KWD/Dummy/src/DummyKeywordDetector.cpp
+index f5adea0..8d3daf9 100644
+--- a/KWD/Dummy/src/DummyKeywordDetector.cpp
++++ b/KWD/Dummy/src/DummyKeywordDetector.cpp
+@@ -124,11 +124,13 @@ void DummyKeywordDetector::detectionLoop() {
+ 
+     int16_t audioDataToPush[m_maxSamplesPerPush];
+     ssize_t wordsRead;
+-     int sock = 0, valread;                                                                                          
++    int sock = 0, valread;                                                                                          
+     struct sockaddr_in serv_addr;                                                                                   
+     char buffer[512] = {0};                                                                                         
+     char snd_buffer[] = "get_value,BothWW.value\n";                                                                 
+-    int count = 0;                                                                                                  
++    char snd_bufferStartIdx[] = "get_value,WWStartIdx.value[0]\n";
++    char snd_bufferEndIdx[] = "get_value,WWEndIdx.value[0]\n";    
++    int count = 0, EndIdx=0, StartIdx=0;                                                                                                  
+     char *tmp = NULL;                                                                                               
+     int port = 15007;                                                                                               
+     int local_count = 0;                                                                                            
+@@ -204,14 +206,37 @@ void DummyKeywordDetector::detectionLoop() {
+              if(count > local_count){                                                                                
+                 ACSDK_WARN(LX("Keyword detected from our code"));                                                    
+                 ACSDK_WARN(LX("count").d("count",count));                                                            
+-                ACSDK_WARN(LX("local_count").d("local_count",local_count));                                          
++                ACSDK_WARN(LX("local_count").d("local_count",local_count));
+                 local_count = count;                                                                                 
+-                notifyKeyWordObservers(                                                                              
++
++             //Now look for Start & End Index
++             //ACSDK_WARN(LX("Now looking for Start and End index----"));
++             if(send(sock , snd_bufferEndIdx , strlen(snd_bufferEndIdx) , 0 ) == -1)                                             
++                ACSDK_WARN(LX("Send command failed"));                                                                
++             valread = read( sock , buffer, 512);                                                                    
++             if(valread == -1) ACSDK_WARN(LX("Receive response failed"));
++             tmp = strstr(buffer, "int,");
++             //ACSDK_WARN(LX("Debug").d("tmp",tmp));
++             if(tmp)
++                EndIdx = atoi(tmp+4);
++             ACSDK_WARN(LX("Found EndIndex ----").d("EndIdx =",EndIdx));
++
++             if(send(sock , snd_bufferStartIdx , strlen(snd_bufferStartIdx) , 0 ) == -1)                                             
++                ACSDK_WARN(LX("Send command failed"));                                                                
++             valread = read( sock , buffer, 512);                                                                    
++             if(valread == -1) ACSDK_WARN(LX("Receive response failed"));
++             tmp = strstr(buffer, "int,");
++             //ACSDK_WARN(LX("Debug").d("tmp",tmp));
++             if(tmp)
++                StartIdx = atoi(tmp+4);
++             ACSDK_WARN(LX("Found StartIdx ----").d("Start_Index=",StartIdx));    
++
++             notifyKeyWordObservers(                                                                              
+                         m_stream,                                                                                    
+                         keyword,                                                                             
+-                        KeyWordObserverInterface::UNSPECIFIED_INDEX,                                                
+-                        m_streamReader->tell());                                                             
+-             }                                           
++                        (m_streamReader->tell() - StartIdx),                                                
++                        (m_streamReader->tell() - EndIdx));                                                             
++             }
+         }
+     }
+ }
+-- 
+1.9.1
+
