@@ -10,3 +10,10 @@ SRC_URI_append_imx7d-pico-conexant += " \
     file://renewSensoryLicense.sh \
     file://setupAVS.sh \
 "
+
+SRC_URI_append_imx7d-pico-voicehat += " \
+    file://getDSPCSoftware.sh \
+    file://startAwe.sh \
+    file://alexa_sdk \
+    file://setupAVS.sh \
+"
