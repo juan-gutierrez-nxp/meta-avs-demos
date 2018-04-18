@@ -49,9 +49,9 @@ EXTRA_OECONF = " \
     --without-libpsl \
 "
 
-do_install_append() {
-	oe_multilib_header curl/curlbuild.h
-}
+#do_install_append() {
+#	oe_multilib_header curl/curlbuild.h
+#}
 
 do_install_append_class-target() {
 	# cleanup buildpaths from curl-config
