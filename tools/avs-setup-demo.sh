@@ -339,7 +339,6 @@ if [ $SOUNDCARD == "VOICEHAT" ]; then
     echo "KERNEL_DEVICETREE = \"imx7d-pico_pi-hat.dtb\"" >> $BUILD_DIR/conf/local.conf
     echo "SOUNDCARD = \"voicehat\"" >> $BUILD_DIR/conf/local.conf
     echo "" >> $BUILD_DIR/conf/local.conf
-	echo "BBLAYERS += \" \${BSPDIR}/sources/meta-avs-demos/meta-avs-dspc \"" >> $BUILD_DIR/conf/bblayers.conf
 fi
 
 if [ $BUILD_WIFI == 1 ]; then
