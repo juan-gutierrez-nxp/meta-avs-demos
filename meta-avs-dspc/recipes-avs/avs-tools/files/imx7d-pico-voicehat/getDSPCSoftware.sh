@@ -18,7 +18,7 @@ then
 fi
 
 
-git clone https://github.com/rhilles-dspc/dspc-nxp-imx7-2micVoiceUI
+git clone https://github.com/dspc-github/dspc-nxp-imx7-2micVoiceUI
 cd dspc-nxp-imx7-2micVoiceUI
 tar -xvf AWE_CL.tar.bz2 -C /home/root/
 
