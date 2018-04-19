@@ -24,3 +24,10 @@ SRC_URI_append_imx8mq-conexant += " \
     file://setupAVS.sh \
 "
 
+SRC_URI_append_imx8mq-voicehat += " \
+    file://getDSPCSoftware.sh \
+    file://startAwe.sh \
+    file://alexa_sdk \
+    file://setupAVS.sh \
+"
+
