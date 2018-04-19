@@ -17,3 +17,10 @@ SRC_URI_append_imx7d-pico-voicehat += " \
     file://alexa_sdk \
     file://setupAVS.sh \
 "
+
+SRC_URI_append_imx8mq-conexant += " \
+    file://alexa_sdk \
+    file://renewSensoryLicense.sh \
+    file://setupAVS.sh \
+"
+
