@@ -1,0 +1,193 @@
+From 6c082c1379890e9b6c9aa7c93ee3ca3629d4e2dc Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Fri, 2 Mar 2018 21:26:24 +0000
+Subject: [PATCH 3/3] fsl-imx8mq-evk-hat: Add HAT soundcard support
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/Makefile             |   3 +-
+ .../boot/dts/freescale/fsl-imx8mq-evk-hat.dts      | 158 +++++++++++++++++++++
+ 2 files changed, 160 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-hat.dts
+
+diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
+index 7a9dae6..2000ee1 100644
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -51,7 +51,8 @@ dtb-$(CONFIG_ARCH_FSL_IMX8MQ) += fsl-imx8mq-ddr3l-arm2.dtb \
+ 				 fsl-imx8mq-evk-dual-display.dtb \
+ 				 fsl-imx8mq-evk-ak4497.dtb \
+ 				 fsl-imx8mq-evk-audio-tdm.dtb \
+-				 fsl-imx8mq-evk-drm.dtb
++				 fsl-imx8mq-evk-drm.dtb \
++				 fsl-imx8mq-evk-hat.dtb
+ 
+ always		:= $(dtb-y)
+ subdir-y	:= $(dts-dirs)
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-hat.dts b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-hat.dts
+new file mode 100644
+index 0000000..cd1953d
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq-evk-hat.dts
+@@ -0,0 +1,158 @@
++/*
++ * Copyright 2017 NXP
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include "fsl-imx8mq-evk.dts"
++
++/ {
++	/delete-node/ wm8524;
++	/delete-node/ sound-wm8524;
++	/delete-node/ sound-hdmi;
++	/delete-node/ sound-spdif;
++	/delete-node/ sound-hdmi-arc;
++
++    aliases {
++        csi0 = &mipi_csi_1;
++        csi1 = &mipi_csi_2;
++        ethernet0 = &fec1;
++        serial0 = &uart1;
++        serial1 = &uart2;
++        serial2 = &uart3;
++        serial3 = &uart4;
++        mmc0 = &usdhc1;
++        mmc1 = &usdhc2;
++        gpio0 = &gpio1;
++        gpio1 = &gpio2;
++        gpio2 = &gpio3;
++        gpio3 = &gpio4;
++        gpio4 = &gpio5;
++        dsi_phy0 = &mipi_dsi_phy;
++        mipi_dsi0 = &mipi_dsi;
++		i2c0 = &i2c1;
++		i2c1 = &i2c2;
++		i2c2 = &i2c3;
++		i2c3 = &i2c4;
++    };
++
++	sound_record: codec {
++		compatible = "knowles,sph0645";
++		
++	};
++
++	sound@1 {
++		compatible = "nxp,imx-audio-tfa98xx", "nxp,imx-tfa98xx";
++		nxp,model = "TFA9912";
++		cpu-dai = <&sai1>;
++		ssi-controller = <&sai1>;
++		nxp,audio-codec = <&tfa98xx_left &tfa98xx_right>;
++		clocks = <&clk 25>;
++		nxp,audio-routing =
++			"Speaker", "OUTL",
++			"DMIC1", "Mic",
++			"DMIC2", "Mic",
++			"DMIC3", "Mic",
++			"DMIC4", "Mic";
++	};
++
++	sound@2 {
++		compatible = "nxp,imx-audio-sph0645", "nxp,imx-sph0645";
++		nxp,model = "SPH0645";
++		cpu-dai = <&sai3>;
++		ssi-controller = <&sai3>;
++		nxp,audio-codec = <&sound_record>;
++		clocks = <&clk 25>;
++	};
++};
++
++&iomuxc {
++	pinctrl-names = "default";
++
++	imx8mq-evk {
++
++		pinctrl_i2c3: i2c3grp {
++			fsl,pins = <
++				MX8MQ_IOMUXC_I2C3_SCL_I2C3_SCL		  0x4000007f
++				MX8MQ_IOMUXC_I2C3_SDA_I2C3_SDA		  0x4000007f
++			>;
++		};
++
++		pinctrl_sai1: sai1grp {
++			fsl,pins = <
++				MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd1
++				MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd1
++				MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK		0xd1
++				MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6	0xd1
++				MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7	0xd1
++				MX8MQ_IOMUXC_NAND_DATA07_GPIO3_IO13		0xd1
++				MX8MQ_IOMUXC_NAND_DATA06_GPIO3_IO12		0xd1
++			>;
++		};
++
++		pinctrl_sai3: sai3grp {
++			fsl,pins = <
++				MX8MQ_IOMUXC_SAI3_RXFS_SAI3_RX_SYNC 0xd1
++				MX8MQ_IOMUXC_SAI3_RXC_SAI3_RX_BCLK  0xd1
++				MX8MQ_IOMUXC_SAI3_MCLK_SAI3_MCLK	0xd1
++				MX8MQ_IOMUXC_SAI3_RXD_SAI3_RX_DATA0	0xd1
++			>;
++		};
++	};
++};
++
++&i2c3 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c3>;
++	status = "okay";
++
++	tfa98xx_left: tfa98xx_left@34 {
++		compatible = "nxp,tfa98xx";
++		reg = <0x34>;
++		reset-gpio = <&gpio3 13 GPIO_ACTIVE_HIGH>;
++		irq-gpio = <&gpio3 12 GPIO_ACTIVE_HIGH>;
++		clocks = <&clk 25>;
++	};
++	tfa98xx_right: tfa98xx_right@35 {
++		compatible = "nxp,tfa98xx";
++		reg = <0x35>;
++		clocks = <&clk 25>;
++	};
++};
++
++&sai1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai1>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI1_SRC>,
++			<&clk IMX8MQ_CLK_SAI1_DIV>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <0>, <49152000>;
++	fsl,dataline = <0x1 0x1>;
++	fsl,shared-interrupt;
++	status = "okay";
++};
++
++&sai3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai3>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI3_SRC>,
++			<&clk IMX8MQ_CLK_SAI3_DIV>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <0>, <24576000>;
++	status = "okay";
++};
+-- 
+2.7.4
+
