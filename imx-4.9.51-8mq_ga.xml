@@ -33,8 +33,8 @@
   </project>
 
   <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="imx-alexa-sdk-next">
-     <copyfile src="tools/avs-setup-demo.sh" dest="avs-setup-demo.sh"/>
-     <copyfile src="README.md" dest="README-AVS-DEMO"/>
+     <linkfile src="tools/avs-setup-demo-8mqevk.sh" dest="avs-setup-demo.sh"/>
+     <linkfile src="README.md" dest="README-AVS-DEMO"/>
   </project>
 
 </manifest>
