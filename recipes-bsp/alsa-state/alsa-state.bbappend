@@ -6,3 +6,6 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 # for i.MX7D
 PACKAGE_ARCH_mx7 = "${MACHINE_ARCH}"
+
+# for i.MX8M
+PACKAGE_ARCH_mx8 = "${MACHINE_ARCH}"
