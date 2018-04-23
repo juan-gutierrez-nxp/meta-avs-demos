@@ -4,11 +4,13 @@ SRC_URI_append_imx7d-pico-sgtl += " \
     file://alexa_sdk \
     file://renewSensoryLicense.sh \
     file://setupAVS.sh \
+    file://getAVSToken.sh \
 "
 SRC_URI_append_imx7d-pico-conexant += " \
     file://alexa_sdk \
     file://renewSensoryLicense.sh \
     file://setupAVS.sh \
+    file://getAVSToken.sh \
 "
 
 SRC_URI_append_imx7d-pico-voicehat += " \
@@ -16,12 +18,14 @@ SRC_URI_append_imx7d-pico-voicehat += " \
     file://startAwe.sh \
     file://alexa_sdk \
     file://setupAVS.sh \
+    file://getAVSToken.sh \
 "
 
 SRC_URI_append_imx8mq-conexant += " \
     file://alexa_sdk \
     file://renewSensoryLicense.sh \
     file://setupAVS.sh \
+    file://getAVSToken.sh \
 "
 
 SRC_URI_append_imx8mq-voicehat += " \
@@ -29,5 +33,6 @@ SRC_URI_append_imx8mq-voicehat += " \
     file://startAwe.sh \
     file://alexa_sdk \
     file://setupAVS.sh \
+    file://getAVSToken.sh \
 "
 

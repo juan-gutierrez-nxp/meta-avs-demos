@@ -1,3 +1,5 @@
+#!/bin/bash
+
 export DISPLAY=:0.0
 /home/root/Alexa_SDK/Scripts/setUTCTime.sh
 
@@ -22,5 +24,3 @@ python AuthServer/AuthServer.py > /dev/null
 echo ""
 echo ""
 echo "============================================================ "
-
-

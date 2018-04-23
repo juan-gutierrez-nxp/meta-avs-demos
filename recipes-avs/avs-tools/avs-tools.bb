@@ -13,7 +13,6 @@ inherit systemd
 
 SRC_URI = " \
 	file://cleanAVSEnv.sh \
-	file://getAVSToken.sh \
 	file://setCredentials.sh \
 	file://setUTCTime.sh \
 	file://startAVSImage.service \
