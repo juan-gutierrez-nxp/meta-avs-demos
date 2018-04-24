@@ -371,6 +371,14 @@ echo "PREFERRED_PROVIDER_jpeg = \"libjpeg-turbo\"" >> $BUILD_DIR/conf/local.conf
 echo "PREFERRED_PROVIDER_jpeg-native = \"libjpeg-turbo-native\"" >> $BUILD_DIR/conf/local.conf
 echo "" >> $BUILD_DIR/conf/local.conf
 
+
+echo "BBMASK_forcevariable =\\" >> $BUILD_DIR/conf/local.conf
+echo "\"meta-freescale/dynamic-layers/browser-layer/recipes-browser/chromium/chromium_52.0.2743.76.bbappend\\" >> $BUILD_DIR/conf/local.conf
+echo "|meta-freescale/dynamic-layers/browser-layer/recipes-browser/chromium/chromium-wayland_48.0.2548.0.bbappend\\" >> $BUILD_DIR/conf/local.conf
+echo "|meta-avs-demos/recipes-kernel/linux/linux-imx_4.9.51.bbappend\"" >> $BUILD_DIR/conf/local.conf
+echo "" >> $BUILD_DIR/conf/local.conf
+
+
 echo "#Rootfs size (Full eMMC - uboot/kernel partitions) = 3.5GB - 16MB" >> $BUILD_DIR/conf/local.conf
 echo "IMAGE_ROOTFS_SIZE = \"3333152\"" >> $BUILD_DIR/conf/local.conf
 echo "IMAGE_OVERHEAD_FACTOR = \"1.0\"" >> $BUILD_DIR/conf/local.conf
