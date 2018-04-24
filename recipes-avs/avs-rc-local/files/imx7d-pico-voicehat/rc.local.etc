@@ -19,6 +19,14 @@ if [ -f /usr/bin/pulseaudio ]; then
 	mv /usr/bin/pulseaudio /usr/bin/pulseaudio.disabled
 fi
 
+if [ -f /usr/lib/gstreamer-1.0/libgstaiurdemux.so ]; then
+    mv /usr/lib/gstreamer-1.0/libgstaiurdemux.so /usr/lib/gstreamer-1.0/libgstaiurdemux.so.disabled
+fi
+
+if [ -f /usr/lib/gstreamer-1.0/libgstbeepdec.so ]; then
+        mv /usr/lib/gstreamer-1.0/libgstbeepdec.so /usr/lib/gstreamer-1.0/libgstbeepdec.so.disabled
+fi
+
 sleep 7
 
 insmod /home/root/snd-soc-tfa98xx.ko fw_name="TFA9892N1A_stereo_32FS.cnt" trace_level=1 dflt_prof_name="dsp_bypass_P" dflt_prof_name2="dsp_bypass_S"

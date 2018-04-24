@@ -20,5 +20,13 @@ if [ -f /usr/bin/pulseaudio ]; then
 	mv /usr/bin/pulseaudio /usr/bin/pulseaudio.disabled
 fi
 
+if [ -f /usr/lib/gstreamer-1.0/libgstaiurdemux.so ]; then
+    mv /usr/lib/gstreamer-1.0/libgstaiurdemux.so /usr/lib/gstreamer-1.0/libgstaiurdemux.so.disabled
+fi
+
+if [ -f /usr/lib/gstreamer-1.0/libgstbeepdec.so ]; then
+        mv /usr/lib/gstreamer-1.0/libgstbeepdec.so /usr/lib/gstreamer-1.0/libgstbeepdec.so.disabled
+fi
+
 exit 0
 
