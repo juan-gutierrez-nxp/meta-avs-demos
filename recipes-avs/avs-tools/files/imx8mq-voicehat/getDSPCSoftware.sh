@@ -18,9 +18,9 @@ then
 fi
 
 
-git clone https://github.com/dspc-github/dspc-nxp-imx7-2micVoiceUI
-cd dspc-nxp-imx7-2micVoiceUI
-tar -xvf AWE_CL.tar.bz2 -C /home/root/
+git clone https://bitbucket.sw.nxp.com/scm/vs/dspc-nxp-imx8m-2micVoiceUI.git
+cd dspc-nxp-imx8m-2micVoiceUI
+tar -xvf AWE_CL_8M.tar.bz2 -C /home/root/
 
   while :; do
     fold -s -w `tput cols`  LICENSE.md | more
