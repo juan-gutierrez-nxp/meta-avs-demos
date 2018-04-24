@@ -63,9 +63,11 @@ else
   echo ""
   echo " And in a separate console (like by ssh), run:                          "
   echo ""
+  echo "   cd ~/Alexa_SDK/avs-sdk-client/SampleApp/src/                         "
   echo ""
   echo "   TZ=UTC ./SampleApp ../../Integration/AlexaClientSDKConfig.json \     "
   echo "   DEBUG9                                                               "
+  echo ""
   echo ""
 fi
   echo "================================================================================="
