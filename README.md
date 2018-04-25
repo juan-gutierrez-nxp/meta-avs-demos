@@ -19,8 +19,19 @@ enviroment.
 
 Let's call this as <yocto_dir>
 
+
+##### For i.MX7D Pico Board
+
+
     $ cd <yocto_dir>
     $ repo init -u https://bitbucket.sw.nxp.com/scm/vs/meta-avs-demos.git -b internal -m imx-alexa-sdk-4.9.11.xml
+
+
+##### For i.MX8M EVK Board
+
+    $ cd <yocto_dir>
+    $ repo init -u https://bitbucket.sw.nxp.com/scm/vs/meta-avs-demos.git -b internal -m imx-4.9.51-8mq_ga.xml
+
 
 #### Download the AVS BSP build environment:
 
@@ -31,7 +42,13 @@ Let's call this as <yocto_dir>
 Run the avs-setup-demo script as follows to setup your environment for the
 imx7d-pico board:
 
+##### For i.MX7D Pico Board
+
     $ MACHINE=imx7d-pico DISTRO=fsl-imx-x11 source avs-setup-demo.sh -b <build_sdk>
+
+##### For i.MX8M EVK Board
+
+    $ MACHINE=imx8mqevk DISTRO=fsl-imx-xwayland source avs-setup-demo.sh -b <build_sdk_8M>
 
 Where <build_sdk> is the name you will give to your build folder.
 
@@ -39,10 +56,10 @@ After acepting the EULA the script will prompt if you want to enable:
 
 #### Sound Card selection
 
-The following Sound Cards are supported on the build:
+The following Sound Cards are supported on the build (SGTL only apply to 7D PicoPi):
 
 * SGTL (In-board Audio Codec for PicoPi)
-* 2-Mic Conexant
+* 2-Mic Synaptics/Conexant
 * 2-Mic TechNexion Voice Hat (with DSPConcepts SW)
 
 The script will prompt to select the soundcard you will be using:
@@ -72,7 +89,7 @@ If your selection was **NO**, then you can always manually fetch and build the
 AVS_SDK on runtime. All the packages dependencies will be already there, so
 only fetching the AVS_SDK source code and building it is required.
 
-#### Install WiFi support
+#### Install WiFi support (This only applies for PicoPi)
 
 Te WiFi support is optional and requires to get from NXP an additional meta-picopi-wifi layer.
 Contact NXP to get this layer to be able to support WiFi on your image
@@ -91,7 +108,7 @@ At the end you will see a text according with the configuration you select for
 your image build.
 
 Next is an example for a Preinstalled AVS_SDK with Conxant Sound Card support
-and WiFi/BT not enabled.
+and WiFi/BT not enabled for PicoPi board.
 
     ============================================================
      AVS configuration is now ready at conf/local.conf
