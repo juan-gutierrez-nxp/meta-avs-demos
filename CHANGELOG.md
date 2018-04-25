@@ -50,3 +50,33 @@
 * The AWE Client needs to run on a separate console on foreground. The process
   does not work as expected if running on background (./startAwe &)
 
+
+
+## [imx-alexa-sdk_1.6] - 2018-04-25
+
+### General changes
+
+* Fix GCC compiler issues on runtime for i.mx7D Pico. The GCC included on the
+  generated image was not built with all the required flags for the i.MX7D
+  architecture
+* Fix SRCREV on the bbappend to SDK 1.6
+* Reorganization of the avs-tools scripts per sound-card directory. So each
+  machine-soundcard variant will have its own copy of setupAVS.sh, startImage,
+  etc. And any other specific script that only applies to a particular card
+  like getDSPConcepts.sh it will be only allocated in its specific directory.
+  These allow a cleaner script, eliminating macros for differentiation.
+* Remove meta-avs-dspc sublayer. Due to the reorg of the avs-tools, a similar
+  approach can be taken for other recipes like the avs-device-sdk and avs-image
+  and allow the meta-avs-dspc to be removed.
+* remove unnecessary installation of curlbuild.h needed for 8M proper build
+* Add i.MX8M EVK support. Two variants are supported: Voicehat and Synaptics
+  soundcards.
+
+
+## Known Issues
+
+* The AWE Client for 8M is temporally allocated on an internal bitbucket repo.
+  So image needs to be run and setup on the NXP network at least for the AVS
+  initial setup process.
+* There is also no public support for 8M for Sensory, so right now the WakeWord
+  for Synaptics image is disabled.
