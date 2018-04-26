@@ -30,4 +30,9 @@ SRC_URI_append_imx8mq-voicehat += " \
     file://alexa_sdk \
     file://setupAVS.sh \
 "
+SRC_URI_append_imx-generic += " \
+    file://alexa_sdk \
+    file://renewSensoryLicense.sh \
+    file://setupAVS.sh \
+"
 
