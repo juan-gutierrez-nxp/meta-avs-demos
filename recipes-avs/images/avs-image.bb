@@ -38,8 +38,6 @@ CORE_IMAGE_EXTRA_INSTALL += " \
 
 
 EXTRA_IMAGE_FEATURES += "dev-pkgs tools-sdk"
-IMAGE_INSTALL_append = " firefox"
-IMAGE_INSTALL_append = " x11vnc"
 IMAGE_INSTALL_append = " libtasn1"
 IMAGE_INSTALL_append = " gtest"
 IMAGE_INSTALL_append = " portaudio-v19"
@@ -53,6 +51,7 @@ IMAGE_INSTALL_append = " flac"
 IMAGE_INSTALL_append = " python-pip"
 IMAGE_INSTALL_append = " cmake"
 IMAGE_INSTALL_append = " ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'xdotool', '', d)}"
+IMAGE_INSTALL_append = " ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'x11vnc', '', d)}"
 
 
 LICENSE_FLAGS_WHITELIST = "commercial_gst-fluendo-mp3 \
