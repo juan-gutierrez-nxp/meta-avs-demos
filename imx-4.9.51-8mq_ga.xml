@@ -34,7 +34,7 @@
 
   <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="imx-alexa-sdk-next">
      <linkfile src="tools/avs-setup-demo-8mqevk.sh" dest="avs-setup-demo.sh"/>
-     <linkfile src="README.md" dest="README-AVS-DEMO"/>
+     <linkfile src="README-IMX8M-EVK.md" dest="README-AVS-DEMO-IMX8M-EVK"/>
   </project>
 
 </manifest>
