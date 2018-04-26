@@ -286,17 +286,8 @@ echo "" >> $BUILD_DIR/conf/local.conf
 
 echo "" >> $BUILD_DIR/conf/local.conf
 
-echo "BBMASK_forcevariable =\\" >> $BUILD_DIR/conf/local.conf
-echo "\"meta-freescale/recipes-graphics/clutter/clutter-1.0_%.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/recipes-graphics/cogl/cogl-1.0_%.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/recipes-graphics/mesa/mesa-demos_%.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/recipes-graphics/xorg-driver/xf86-video-imxfb-vivante_5.0.11.p8.6.bb\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/dynamic-layers/qt5-layer/recipes-qt/qt5/qtbase_%.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale-distro/recipes-fsl/packagegroups/packagegroup-fsl-tools-gpu-external.bb\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/recipes-graphics/wayland/weston_%.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/dynamic-layers/browser-layer/recipes-browser/chromium/chromium_52.0.2743.76.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/dynamic-layers/browser-layer/recipes-browser/chromium/chromium-wayland_48.0.2548.0.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-avs-demos/recipes-bsp/u-boot\\" >> $BUILD_DIR/conf/local.conf
+echo "BBMASK +=\\" >> $BUILD_DIR/conf/local.conf
+echo "\"meta-avs-demos/recipes-bsp/u-boot\\" >> $BUILD_DIR/conf/local.conf
 echo "|meta-avs-demos/recipes-kernel/linux/linux-imx_4.9.%.bbappend\"" >> $BUILD_DIR/conf/local.conf
 echo "" >> $BUILD_DIR/conf/local.conf
 

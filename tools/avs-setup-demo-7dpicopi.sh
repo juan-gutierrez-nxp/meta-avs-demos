@@ -372,10 +372,8 @@ echo "PREFERRED_PROVIDER_jpeg-native = \"libjpeg-turbo-native\"" >> $BUILD_DIR/c
 echo "" >> $BUILD_DIR/conf/local.conf
 
 
-echo "BBMASK_forcevariable =\\" >> $BUILD_DIR/conf/local.conf
-echo "\"meta-freescale/dynamic-layers/browser-layer/recipes-browser/chromium/chromium_52.0.2743.76.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-freescale/dynamic-layers/browser-layer/recipes-browser/chromium/chromium-wayland_48.0.2548.0.bbappend\\" >> $BUILD_DIR/conf/local.conf
-echo "|meta-avs-demos/recipes-kernel/linux/linux-imx_4.9.51.bbappend\"" >> $BUILD_DIR/conf/local.conf
+echo "BBMASK +=\\" >> $BUILD_DIR/conf/local.conf
+echo "\"meta-avs-demos/recipes-kernel/linux/linux-imx_4.9.51.bbappend\"" >> $BUILD_DIR/conf/local.conf
 echo "" >> $BUILD_DIR/conf/local.conf
 
 
