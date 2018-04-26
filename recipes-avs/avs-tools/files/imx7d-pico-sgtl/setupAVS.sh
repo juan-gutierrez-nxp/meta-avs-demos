@@ -62,8 +62,6 @@ do
 
 done
 
-/home/root/Alexa_SDK/Scripts/getAVSToken.sh
-
 echo ""
 echo ""
 echo "======================================================================  "
