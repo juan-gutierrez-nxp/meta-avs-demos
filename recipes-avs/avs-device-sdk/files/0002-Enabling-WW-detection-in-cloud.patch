@@ -1,4 +1,4 @@
-From 02831a78ee5845d5ed59a2c005e7870ee3e85d83 Mon Sep 17 00:00:00 2001
+From 319cf28f3b24b2c966280f34df791df2d3f473c1 Mon Sep 17 00:00:00 2001
 From: Sabeel Syed <sabeel.syed@nxp.com>
 Date: Tue, 10 Apr 2018 14:45:13 -0700
 Subject: [PATCH 2/2] Enabling WW detection in cloud

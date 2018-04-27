@@ -1,4 +1,4 @@
-From 774839d55475e14c623f1ea1839dfd9ec7b1c712 Mon Sep 17 00:00:00 2001
+From 0f8d64ee9211999af4d7e18740003bfcabffac0f Mon Sep 17 00:00:00 2001
 From: Kshitij Sha <kshitij.shah@nxp.com>
 Date: Mon, 8 Jan 2018 16:08:00 +0000
 Subject: [PATCH] Add Dummy Key Word Detector
@@ -9,29 +9,25 @@ Signed-off-by: Kshitij Sha <kshitij.shah@nxp.com>
 Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
 ---
  .../test/AudioInputProcessorIntegrationTest.cpp    |   2 +
- KWD/CMakeLists.txt                                 |   3 +
+ KWD/CMakeLists.txt                                 |   5 +
  KWD/Dummy/CMakeLists.txt                           |   6 +
- KWD/Dummy/include/DummyKeywordDetector.h           | 143 +++++++
- KWD/Dummy/src/CMakeLists.txt                       |  13 +
- KWD/Dummy/src/DummyKeywordDetector.cpp             | 220 +++++++++++
- SampleApp/src/CMakeLists.txt                       |   4 +-
- SampleApp/src/CMakeLists.txt.orig                  |  46 +++
- SampleApp/src/SampleApplication.cpp                |  13 +
- SampleApp/src/SampleApplication.cpp.orig           | 426 +++++++++++++++++++++
- build/cmake/KeywordDetector.cmake                  |   8 +-
- 11 files changed, 882 insertions(+), 2 deletions(-)
+ KWD/Dummy/include/Dummy/DummyKeywordDetector.h     | 143 ++++++++++++++
+ KWD/Dummy/src/CMakeLists.txt                       |  13 ++
+ KWD/Dummy/src/DummyKeywordDetector.cpp             | 220 +++++++++++++++++++++
+ KWD/KWDProvider/src/CMakeLists.txt                 |   6 +-
+ KWD/KWDProvider/src/KeywordDetectorProvider.cpp    |   9 +
+ build/cmake/KeywordDetector.cmake                  |  10 +-
+ 9 files changed, 412 insertions(+), 2 deletions(-)
  create mode 100644 KWD/Dummy/CMakeLists.txt
- create mode 100644 KWD/Dummy/include/DummyKeywordDetector.h
+ create mode 100644 KWD/Dummy/include/Dummy/DummyKeywordDetector.h
  create mode 100644 KWD/Dummy/src/CMakeLists.txt
  create mode 100644 KWD/Dummy/src/DummyKeywordDetector.cpp
- create mode 100644 SampleApp/src/CMakeLists.txt.orig
- create mode 100644 SampleApp/src/SampleApplication.cpp.orig
 
 diff --git a/Integration/test/AudioInputProcessorIntegrationTest.cpp b/Integration/test/AudioInputProcessorIntegrationTest.cpp
-index 334d3f7..353ccfb 100644
+index 1ba99ea..5e2aae5 100644
 --- a/Integration/test/AudioInputProcessorIntegrationTest.cpp
 +++ b/Integration/test/AudioInputProcessorIntegrationTest.cpp
-@@ -62,6 +62,8 @@
+@@ -57,6 +57,8 @@
  #include "KittAi/KittAiKeyWordDetector.h"
  #elif KWD_SENSORY
  #include "Sensory/SensoryKeywordDetector.h"
@@ -41,16 +37,22 @@ index 334d3f7..353ccfb 100644
  
  namespace alexaClientSDK {
 diff --git a/KWD/CMakeLists.txt b/KWD/CMakeLists.txt
-index 4d5e16e..a758d9c 100644
+index ae12256..fcc094f 100644
 --- a/KWD/CMakeLists.txt
 +++ b/KWD/CMakeLists.txt
-@@ -16,3 +16,6 @@ endif()
+@@ -16,7 +16,12 @@ endif()
  if(SENSORY_KEY_WORD_DETECTOR)
      add_subdirectory("Sensory")
  endif()
 +if(DUMMY_KEY_WORD_DETECTOR)
 +    add_subdirectory("Dummy")
 +endif()
+ 
+ if(KWD)
+     add_subdirectory("KWDProvider")
+ endif()
++
++
 diff --git a/KWD/Dummy/CMakeLists.txt b/KWD/Dummy/CMakeLists.txt
 new file mode 100644
 index 0000000..e1fca41
@@ -63,11 +65,11 @@ index 0000000..e1fca41
 +include(../../build/BuildDefaults.cmake)
 +
 +add_subdirectory("src")
-diff --git a/KWD/Dummy/include/DummyKeywordDetector.h b/KWD/Dummy/include/DummyKeywordDetector.h
+diff --git a/KWD/Dummy/include/Dummy/DummyKeywordDetector.h b/KWD/Dummy/include/Dummy/DummyKeywordDetector.h
 new file mode 100644
 index 0000000..96c1d1e
 --- /dev/null
-+++ b/KWD/Dummy/include/DummyKeywordDetector.h
++++ b/KWD/Dummy/include/Dummy/DummyKeywordDetector.h
 @@ -0,0 +1,143 @@
 +/*
 + * DummyKeywordDetector.h
@@ -266,7 +268,7 @@ index 0000000..f5adea0
 +#include <netinet/in.h>
 +#include <AVSCommon/Utils/Logger/Logger.h>
 +#include <arpa/inet.h>
-+#include "DummyKeywordDetector.h"
++#include "Dummy/DummyKeywordDetector.h"
 +#include <string.h>
 +
 +namespace alexaClientSDK {
@@ -458,538 +460,51 @@ index 0000000..f5adea0
 +
 +}  // namespace kwd
 +}  // namespace alexaClientSDK
-diff --git a/SampleApp/src/CMakeLists.txt b/SampleApp/src/CMakeLists.txt
-index f5170a1..fce1fb9 100644
---- a/SampleApp/src/CMakeLists.txt
-+++ b/SampleApp/src/CMakeLists.txt
-@@ -43,7 +43,9 @@ endif()
- if(SENSORY_KEY_WORD_DETECTOR)
-     target_link_libraries(SampleApp SENSORY)
+diff --git a/KWD/KWDProvider/src/CMakeLists.txt b/KWD/KWDProvider/src/CMakeLists.txt
+index 207abe7..b585f54 100644
+--- a/KWD/KWDProvider/src/CMakeLists.txt
++++ b/KWD/KWDProvider/src/CMakeLists.txt
+@@ -14,5 +14,9 @@ if(KITTAI_KEY_WORD_DETECTOR)
+     target_link_libraries(KeywordDetectorProvider KITTAI)
  endif()
--
+ 
 +if(DUMMY_KEY_WORD_DETECTOR)
-+    target_link_libraries(SampleApp DUMMY)
-+endif()
- if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-     target_link_libraries(SampleApp
-         "-framework CoreAudio" 
-diff --git a/SampleApp/src/CMakeLists.txt.orig b/SampleApp/src/CMakeLists.txt.orig
-new file mode 100644
-index 0000000..948211c
---- /dev/null
-+++ b/SampleApp/src/CMakeLists.txt.orig
-@@ -0,0 +1,46 @@
-+add_executable(SampleApp 
-+    main.cpp 
-+    PortAudioMicrophoneWrapper.cpp 
-+    InteractionManager.cpp 
-+    UserInputManager.cpp
-+    ConsolePrinter.cpp
-+    GuiRenderer.cpp
-+    UIManager.cpp
-+    KeywordObserver.cpp
-+    ConnectionObserver.cpp
-+    SampleApplication.cpp)
-+
-+target_include_directories(SampleApp PUBLIC 
-+    "${SampleApp_SOURCE_DIR}/include"
-+    "${MediaPlayer_SOURCE_DIR}/include"
-+    "${DefaultClient_SOURCE_DIR}/include"
-+    "${PORTAUDIO_INCLUDE_DIR}")
-+
-+target_link_libraries(SampleApp 
-+    DefaultClient
-+    AuthDelegate 
-+    MediaPlayer 
-+    "${PORTAUDIO_LIB_PATH}")
-+
-+if(KITTAI_KEY_WORD_DETECTOR)
-+    target_link_libraries(SampleApp 
-+        KITTAI)
++    target_link_libraries(KeywordDetectorProvider DUMMY)
 +endif()
 +
-+if(SENSORY_KEY_WORD_DETECTOR)
-+    target_link_libraries(SampleApp SENSORY)
-+endif()
-+
-+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-+    target_link_libraries(SampleApp
-+        "-framework CoreAudio" 
-+        "-framework AudioToolbox" 
-+        "-framework AudioUnit" 
-+        "-framework CoreServices" 
-+        "-framework Carbon")
-+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-+    target_link_libraries(SampleApp
-+        rt m pthread asound)
-+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-+    message(FATAL_ERROR "Windows is unsupported at the moment")  
-+endif()
-diff --git a/SampleApp/src/SampleApplication.cpp b/SampleApp/src/SampleApplication.cpp
-index 2ad79ec..2d51d70 100644
---- a/SampleApp/src/SampleApplication.cpp
-+++ b/SampleApp/src/SampleApplication.cpp
-@@ -22,6 +22,8 @@
+ # install target
+-asdk_install()
+\ No newline at end of file
++asdk_install()
+diff --git a/KWD/KWDProvider/src/KeywordDetectorProvider.cpp b/KWD/KWDProvider/src/KeywordDetectorProvider.cpp
+index a25756c..277f7b0 100644
+--- a/KWD/KWDProvider/src/KeywordDetectorProvider.cpp
++++ b/KWD/KWDProvider/src/KeywordDetectorProvider.cpp
+@@ -19,6 +19,8 @@
  #include <KittAi/KittAiKeyWordDetector.h>
  #elif KWD_SENSORY
  #include <Sensory/SensoryKeywordDetector.h>
 +#elif KWD_DUMMY
-+#include <DummyKeywordDetector.h>
++#include <Dummy/DummyKeywordDetector.h>
  #endif
  
- #ifdef ENABLE_ESP
-@@ -583,6 +585,17 @@ bool SampleApplication::initialize(
-         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create SensoryKeyWordDetector!");
-         return false;
-     }
+ #ifdef KWD_KITTAI
+@@ -60,6 +62,13 @@ std::unique_ptr<kwd::AbstractKeywordDetector> KeywordDetectorProvider::create(
+         keyWordObservers,
+         keyWordDetectorStateObservers,
+         pathToInputFolder + "/spot-alexa-rpi-31000.snsr");
++
 +#elif defined(KWD_DUMMY)
-+    m_keywordDetector = kwd::DummyKeywordDetector::create(
-+        sharedDataStream,
-+        compatibleAudioFormat,
-+        {keywordObserver},
-+        std::unordered_set<
-+             std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>());
-+    if (!m_keywordDetector) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create DummyKeywWordDetector!");
-+        return false;
-+    }
++     return kwd::DummyKeywordDetector::create(
++         stream,
++         audioFormat,
++         keyWordObservers,
++         keyWordDetectorStateObservers);
+ #else
+     return nullptr;
  #endif
- 
-     // If wake word is enabled, then creating the interaction manager with a wake word audio provider.
-diff --git a/SampleApp/src/SampleApplication.cpp.orig b/SampleApp/src/SampleApplication.cpp.orig
-new file mode 100644
-index 0000000..5901037
---- /dev/null
-+++ b/SampleApp/src/SampleApplication.cpp.orig
-@@ -0,0 +1,426 @@
-+/*
-+ * SampleApplication.cpp
-+ *
-+ * Copyright (c) 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-+ *
-+ * Licensed under the Apache License, Version 2.0 (the "License").
-+ * You may not use this file except in compliance with the License.
-+ * A copy of the License is located at
-+ *
-+ *     http://aws.amazon.com/apache2.0/
-+ *
-+ * or in the "license" file accompanying this file. This file is distributed
-+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-+ * express or implied. See the License for the specific language governing
-+ * permissions and limitations under the License.
-+ */
-+
-+#include "SampleApp/KeywordObserver.h"
-+#include "SampleApp/ConnectionObserver.h"
-+#include "SampleApp/SampleApplication.h"
-+
-+#ifdef KWD_KITTAI
-+#include <KittAi/KittAiKeyWordDetector.h>
-+#elif KWD_SENSORY
-+#include <Sensory/SensoryKeywordDetector.h>
-+#endif
-+#include <Alerts/Storage/SQLiteAlertStorage.h>
-+#include <Settings/SQLiteSettingStorage.h>
-+#include <AuthDelegate/AuthDelegate.h>
-+#include <AVSCommon/AVS/Initialization/AlexaClientSDKInit.h>
-+#include <AVSCommon/Utils/Configuration/ConfigurationNode.h>
-+#include <AVSCommon/Utils/LibcurlUtils/HTTPContentFetcherFactory.h>
-+#include <AVSCommon/Utils/Logger/LoggerSinkManager.h>
-+#include <MediaPlayer/MediaPlayer.h>
-+
-+#include <algorithm>
-+#include <cctype>
-+#include <fstream>
-+
-+namespace alexaClientSDK {
-+namespace sampleApp {
-+
-+/// The sample rate of microphone audio data.
-+static const unsigned int SAMPLE_RATE_HZ = 16000;
-+
-+/// The number of audio channels.
-+static const unsigned int NUM_CHANNELS = 1;
-+
-+/// The size of each word within the stream.
-+static const size_t WORD_SIZE = 2;
-+
-+/// The maximum number of readers of the stream.
-+static const size_t MAX_READERS = 10;
-+
-+/// The amount of audio data to keep in the ring buffer.
-+static const std::chrono::seconds AMOUNT_OF_AUDIO_DATA_IN_BUFFER = std::chrono::seconds(15);
-+
-+/// The size of the ring buffer.
-+static const size_t BUFFER_SIZE_IN_SAMPLES = (SAMPLE_RATE_HZ)*AMOUNT_OF_AUDIO_DATA_IN_BUFFER.count();
-+
-+/// Key for the root node value containing configuration values for SampleApp.
-+static const std::string SAMPLE_APP_CONFIG_KEY("sampleApp");
-+
-+/// Key for the endpoint value under the @c SAMPLE_APP_CONFIG_KEY configuration node.
-+static const std::string ENDPOINT_KEY("endpoint");
-+
-+/// Default AVS endpoint to connect to.
-+static const std::string DEFAULT_ENDPOINT("https://avs-alexa-na.amazon.com");
-+
-+#ifdef KWD_KITTAI
-+/// The sensitivity of the Kitt.ai engine.
-+static const double KITT_AI_SENSITIVITY = 0.6;
-+
-+/// The audio amplifier level of the Kitt.ai engine.
-+static const float KITT_AI_AUDIO_GAIN = 2.0;
-+
-+/// Whether Kitt.ai should apply front end audio processing.
-+static const bool KITT_AI_APPLY_FRONT_END_PROCESSING = true;
-+#endif
-+
-+/// A set of all log levels.
-+static const std::set<alexaClientSDK::avsCommon::utils::logger::Level> allLevels = {
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG9,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG8,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG7,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG6,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG5,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG4,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG3,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG2,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG1,
-+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG0,
-+    alexaClientSDK::avsCommon::utils::logger::Level::INFO,
-+    alexaClientSDK::avsCommon::utils::logger::Level::WARN,
-+    alexaClientSDK::avsCommon::utils::logger::Level::ERROR,
-+    alexaClientSDK::avsCommon::utils::logger::Level::CRITICAL,
-+    alexaClientSDK::avsCommon::utils::logger::Level::NONE};
-+
-+/**
-+ * Gets a log level consumable by the SDK based on the user input string for log level.
-+ *
-+ * @param userInputLogLevel The string to be parsed into a log level.
-+ * @return The log level. This will default to NONE if the input string is not properly parsable.
-+ */
-+static alexaClientSDK::avsCommon::utils::logger::Level getLogLevelFromUserInput(std::string userInputLogLevel) {
-+    std::transform(userInputLogLevel.begin(), userInputLogLevel.end(), userInputLogLevel.begin(), ::toupper);
-+    return alexaClientSDK::avsCommon::utils::logger::convertNameToLevel(userInputLogLevel);
-+}
-+
-+std::unique_ptr<SampleApplication> SampleApplication::create(
-+    const std::string& pathToConfig,
-+    const std::string& pathToInputFolder,
-+    const std::string& logLevel) {
-+    auto clientApplication = std::unique_ptr<SampleApplication>(new SampleApplication);
-+    if (!clientApplication->initialize(pathToConfig, pathToInputFolder, logLevel)) {
-+        ConsolePrinter::simplePrint("Failed to initialize SampleApplication");
-+        return nullptr;
-+    }
-+    return clientApplication;
-+}
-+
-+void SampleApplication::run() {
-+    m_userInputManager->run();
-+}
-+
-+bool SampleApplication::initialize(
-+    const std::string& pathToConfig,
-+    const std::string& pathToInputFolder,
-+    const std::string& logLevel) {
-+    /*
-+     * Set up the SDK logging system to write to the SampleApp's ConsolePrinter.  Also adjust the logging level
-+     * if requested.
-+     */
-+    std::shared_ptr<alexaClientSDK::avsCommon::utils::logger::Logger> consolePrinter =
-+        std::make_shared<alexaClientSDK::sampleApp::ConsolePrinter>();
-+
-+    if (!logLevel.empty()) {
-+        auto logLevelValue = getLogLevelFromUserInput(logLevel);
-+        if (alexaClientSDK::avsCommon::utils::logger::Level::UNKNOWN == logLevelValue) {
-+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Unknown log level input!");
-+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Possible log level options are: ");
-+            for (auto it = allLevels.begin(); it != allLevels.end(); ++it) {
-+                alexaClientSDK::sampleApp::ConsolePrinter::simplePrint(
-+                    alexaClientSDK::avsCommon::utils::logger::convertLevelToName(*it));
-+            }
-+            return false;
-+        }
-+
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint(
-+            "Running app with log level: " +
-+            alexaClientSDK::avsCommon::utils::logger::convertLevelToName(logLevelValue));
-+        consolePrinter->setLevel(logLevelValue);
-+    }
-+    alexaClientSDK::avsCommon::utils::logger::LoggerSinkManager::instance().initialize(consolePrinter);
-+
-+    /*
-+     * This is a required step upon startup of the SDK before any modules are created. For that reason, it is being
-+     * called here, before creating the MediaPlayer, audio streams, DefaultClient, etc.
-+     */
-+    std::ifstream configInfile(pathToConfig);
-+    if (!configInfile.good()) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to read config file!");
-+        return false;
-+    }
-+    if (!avsCommon::avs::initialization::AlexaClientSDKInit::initialize({&configInfile})) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to initialize SDK!");
-+        return false;
-+    }
-+
-+    auto config = alexaClientSDK::avsCommon::utils::configuration::ConfigurationNode::getRoot();
-+
-+    auto httpContentFetcherFactory = std::make_shared<avsCommon::utils::libcurlUtils::HTTPContentFetcherFactory>();
-+
-+    /*
-+     * Creating the media players. Here, the default GStreamer based MediaPlayer is being created. However, any
-+     * MediaPlayer that follows the specified MediaPlayerInterface can work.
-+     */
-+    auto speakMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create(
-+        httpContentFetcherFactory, avsCommon::sdkInterfaces::SpeakerInterface::Type::AVS_SYNCED);
-+    if (!speakMediaPlayer) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create media player for speech!");
-+        return false;
-+    }
-+
-+    auto audioMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create(
-+        httpContentFetcherFactory, avsCommon::sdkInterfaces::SpeakerInterface::Type::AVS_SYNCED);
-+    if (!audioMediaPlayer) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create media player for content!");
-+        return false;
-+    }
-+
-+    /*
-+     * The ALERTS speaker type will cause volume control to be independent and localized. By assigning this type,
-+     * Alerts volume/mute changes will not be in sync with AVS. No directives or events will be associated with volume
-+     * control.
-+     */
-+    auto alertsMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create(
-+        httpContentFetcherFactory, avsCommon::sdkInterfaces::SpeakerInterface::Type::LOCAL);
-+    if (!alertsMediaPlayer) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create media player for alerts!");
-+        return false;
-+    }
-+
-+    /*
-+     * Create Speaker interfaces to control the volume. For the SDK, the MediaPlayer happens to also provide
-+     * volume control functionality, but this does not have to be case.
-+     */
-+    std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::SpeakerInterface> speakSpeaker =
-+        std::static_pointer_cast<alexaClientSDK::avsCommon::sdkInterfaces::SpeakerInterface>(speakMediaPlayer);
-+    std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::SpeakerInterface> audioSpeaker =
-+        std::static_pointer_cast<alexaClientSDK::avsCommon::sdkInterfaces::SpeakerInterface>(audioMediaPlayer);
-+    std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::SpeakerInterface> alertsSpeaker =
-+        std::static_pointer_cast<alexaClientSDK::avsCommon::sdkInterfaces::SpeakerInterface>(alertsMediaPlayer);
-+
-+    // Creating the alert storage object to be used for rendering and storing alerts.
-+    auto alertStorage = std::make_shared<alexaClientSDK::capabilityAgents::alerts::storage::SQLiteAlertStorage>();
-+
-+    /*
-+     * Creating settings storage object to be used for storing <key, value> pairs of AVS Settings.
-+     */
-+    auto settingsStorage = std::make_shared<alexaClientSDK::capabilityAgents::settings::SQLiteSettingStorage>();
-+
-+    /*
-+     * Creating the UI component that observes various components and prints to the console accordingly.
-+     */
-+    auto userInterfaceManager = std::make_shared<alexaClientSDK::sampleApp::UIManager>();
-+
-+    /*
-+     * Setting up a connection observer to wait for connection and authorization prior to accepting user input at
-+     * startup.
-+     */
-+    auto connectionObserver = std::make_shared<alexaClientSDK::sampleApp::ConnectionObserver>();
-+
-+    /*
-+     * Creating the AuthDelegate - this component takes care of LWA and authorization of the client. At the moment,
-+     * this must be done and authorization must be achieved prior to making the call to connect().
-+     */
-+    std::shared_ptr<alexaClientSDK::authDelegate::AuthDelegate> authDelegate =
-+        alexaClientSDK::authDelegate::AuthDelegate::create();
-+
-+    authDelegate->addAuthObserver(connectionObserver);
-+
-+    /*
-+     * Creating the DefaultClient - this component serves as an out-of-box default object that instantiates and "glues"
-+     * together all the modules.
-+     */
-+    std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client =
-+        alexaClientSDK::defaultClient::DefaultClient::create(
-+            speakMediaPlayer,
-+            audioMediaPlayer,
-+            alertsMediaPlayer,
-+            speakSpeaker,
-+            audioSpeaker,
-+            alertsSpeaker,
-+            authDelegate,
-+            alertStorage,
-+            settingsStorage,
-+            {userInterfaceManager},
-+            {connectionObserver, userInterfaceManager});
-+
-+    if (!client) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create default SDK client!");
-+        return false;
-+    }
-+
-+    /*
-+     * TODO: ACSDK-384 Remove the requirement of clients having to wait for authorization before making the connect()
-+     * call.
-+     */
-+    if (!connectionObserver->waitFor(
-+            alexaClientSDK::avsCommon::sdkInterfaces::AuthObserverInterface::State::REFRESHED)) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to authorize SDK client!");
-+        return false;
-+    }
-+
-+    std::string endpoint;
-+    config[SAMPLE_APP_CONFIG_KEY].getString(ENDPOINT_KEY, &endpoint, DEFAULT_ENDPOINT);
-+
-+    client->connect(endpoint);
-+
-+    if (!connectionObserver->waitFor(avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::CONNECTED)) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to connect to AVS!");
-+        return false;
-+    }
-+    // Add userInterfaceManager as observer of locale setting.
-+    client->addSettingObserver("locale", userInterfaceManager);
-+    // Send default settings set by the user to AVS.
-+    client->sendDefaultSettings();
-+
-+    client->addSpeakerManagerObserver(userInterfaceManager);
-+
-+    /*
-+     * Creating the buffer (Shared Data Stream) that will hold user audio data. This is the main input into the SDK.
-+     */
-+    size_t bufferSize = alexaClientSDK::avsCommon::avs::AudioInputStream::calculateBufferSize(
-+        BUFFER_SIZE_IN_SAMPLES, WORD_SIZE, MAX_READERS);
-+    auto buffer = std::make_shared<alexaClientSDK::avsCommon::avs::AudioInputStream::Buffer>(bufferSize);
-+    std::shared_ptr<alexaClientSDK::avsCommon::avs::AudioInputStream> sharedDataStream =
-+        alexaClientSDK::avsCommon::avs::AudioInputStream::create(buffer, WORD_SIZE, MAX_READERS);
-+
-+    if (!sharedDataStream) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create shared data stream!");
-+        return false;
-+    }
-+
-+    alexaClientSDK::avsCommon::utils::AudioFormat compatibleAudioFormat;
-+    compatibleAudioFormat.sampleRateHz = SAMPLE_RATE_HZ;
-+    compatibleAudioFormat.sampleSizeInBits = WORD_SIZE * CHAR_BIT;
-+    compatibleAudioFormat.numChannels = NUM_CHANNELS;
-+    compatibleAudioFormat.endianness = alexaClientSDK::avsCommon::utils::AudioFormat::Endianness::LITTLE;
-+    compatibleAudioFormat.encoding = alexaClientSDK::avsCommon::utils::AudioFormat::Encoding::LPCM;
-+
-+    /*
-+     * Creating each of the audio providers. An audio provider is a simple package of data consisting of the stream
-+     * of audio data, as well as metadata about the stream. For each of the three audio providers created here, the same
-+     * stream is used since this sample application will only have one microphone.
-+     */
-+
-+    // Creating tap to talk audio provider
-+    bool tapAlwaysReadable = true;
-+    bool tapCanOverride = true;
-+    bool tapCanBeOverridden = true;
-+
-+    alexaClientSDK::capabilityAgents::aip::AudioProvider tapToTalkAudioProvider(
-+        sharedDataStream,
-+        compatibleAudioFormat,
-+        alexaClientSDK::capabilityAgents::aip::ASRProfile::NEAR_FIELD,
-+        tapAlwaysReadable,
-+        tapCanOverride,
-+        tapCanBeOverridden);
-+
-+    // Creating hold to talk audio provider
-+    bool holdAlwaysReadable = false;
-+    bool holdCanOverride = true;
-+    bool holdCanBeOverridden = false;
-+
-+    alexaClientSDK::capabilityAgents::aip::AudioProvider holdToTalkAudioProvider(
-+        sharedDataStream,
-+        compatibleAudioFormat,
-+        alexaClientSDK::capabilityAgents::aip::ASRProfile::CLOSE_TALK,
-+        holdAlwaysReadable,
-+        holdCanOverride,
-+        holdCanBeOverridden);
-+
-+    std::shared_ptr<alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper> micWrapper =
-+        alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream);
-+    if (!micWrapper) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create PortAudioMicrophoneWrapper!");
-+        return false;
-+    }
-+
-+// Creating wake word audio provider, if necessary
-+#ifdef KWD
-+    bool wakeAlwaysReadable = true;
-+    bool wakeCanOverride = false;
-+    bool wakeCanBeOverridden = true;
-+
-+    alexaClientSDK::capabilityAgents::aip::AudioProvider wakeWordAudioProvider(
-+        sharedDataStream,
-+        compatibleAudioFormat,
-+        alexaClientSDK::capabilityAgents::aip::ASRProfile::NEAR_FIELD,
-+        wakeAlwaysReadable,
-+        wakeCanOverride,
-+        wakeCanBeOverridden);
-+
-+    // This observer is notified any time a keyword is detected and notifies the DefaultClient to start recognizing.
-+    auto keywordObserver = std::make_shared<alexaClientSDK::sampleApp::KeywordObserver>(client, wakeWordAudioProvider);
-+
-+#if defined(KWD_KITTAI)
-+    m_keywordDetector = alexaClientSDK::kwd::KittAiKeyWordDetector::create(
-+        sharedDataStream,
-+        compatibleAudioFormat,
-+        {keywordObserver},
-+        std::unordered_set<
-+            std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
-+        pathToInputFolder + "/common.res",
-+        {{pathToInputFolder + "/alexa.umdl", "ALEXA", KITT_AI_SENSITIVITY}},
-+        KITT_AI_AUDIO_GAIN,
-+        KITT_AI_APPLY_FRONT_END_PROCESSING);
-+    if (!m_keywordDetector) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create KittAiKeywWordDetector!");
-+        return false;
-+    }
-+#elif defined(KWD_SENSORY)
-+    m_keywordDetector = kwd::SensoryKeywordDetector::create(
-+        sharedDataStream,
-+        compatibleAudioFormat,
-+        {keywordObserver},
-+        std::unordered_set<
-+            std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
-+        pathToInputFolder + "/spot-alexa-rpi-31000.snsr");
-+    if (!m_keywordDetector) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create SensoryKeywWordDetector!");
-+        return false;
-+    }
-+#endif
-+
-+    // If wake word is enabled, then creating the interaction manager with a wake word audio provider.
-+    auto interactionManager = std::make_shared<alexaClientSDK::sampleApp::InteractionManager>(
-+        client,
-+        micWrapper,
-+        userInterfaceManager,
-+        holdToTalkAudioProvider,
-+        tapToTalkAudioProvider,
-+        wakeWordAudioProvider);
-+
-+#else
-+    // If wake word is not enabled, then creating the interaction manager without a wake word audio provider.
-+    auto interactionManager = std::make_shared<alexaClientSDK::sampleApp::InteractionManager>(
-+        client, micWrapper, userInterfaceManager, holdToTalkAudioProvider, tapToTalkAudioProvider);
-+#endif
-+
-+    client->addAlexaDialogStateObserver(interactionManager);
-+
-+    // Creating the input observer.
-+    m_userInputManager = alexaClientSDK::sampleApp::UserInputManager::create(interactionManager);
-+    if (!m_userInputManager) {
-+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create UserInputManager!");
-+        return false;
-+    }
-+
-+    return true;
-+}
-+
-+}  // namespace sampleApp
-+}  // namespace alexaClientSDK
 diff --git a/build/cmake/KeywordDetector.cmake b/build/cmake/KeywordDetector.cmake
-index 08bcd32..cca0f3d 100644
+index 1594c51..a574a32 100644
 --- a/build/cmake/KeywordDetector.cmake
 +++ b/build/cmake/KeywordDetector.cmake
 @@ -25,8 +25,9 @@ option(AMAZONLITE_KEY_WORD_DETECTOR "Enable AmazonLite keyword detector." OFF)
@@ -1003,14 +518,16 @@ index 08bcd32..cca0f3d 100644
      message("No keyword detector type specified, skipping build of keyword detector.")
      return()
  endif()
-@@ -85,3 +86,8 @@ if(SENSORY_KEY_WORD_DETECTOR)
-     add_definitions(-DKWD)
+@@ -89,3 +90,10 @@ if(SENSORY_KEY_WORD_DETECTOR)
      add_definitions(-DKWD_SENSORY)
+     set(KWD ON)
  endif()
++
 +if(DUMMY_KEY_WORD_DETECTOR)
 +    message("Creating ${PROJECT_NAME} with keyword detector type: Dummy")
 +    add_definitions(-DKWD)
 +    add_definitions(-DKWD_DUMMY)
++    set(KWD ON)
 +endif()
 -- 
 1.9.1
