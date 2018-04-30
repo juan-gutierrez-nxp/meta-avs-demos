@@ -9,7 +9,7 @@
   <remote fetch="git://github.com/OSSystems" name="OSSystems"/>
   <remote fetch="git://github.com/meta-qt5"  name="QT5"/>
   <remote fetch="https://source.codeaurora.org/external/imx" name="CAF"/>
-  <remote fetch="https://bitbucket.sw.nxp.com/scm/vs" name="avs-release" />
+  <remote fetch="https://source.codeaurora.org/external/imxsupport" name="avs-release" />
 
   <project remote="yocto" revision="78890ea22750804e3e9113e76f7ca3d7234c8342" name="poky" path="sources/poky"/>
   <project remote="yocto" revision="a398b50b7fc084a9e68cc3000c218d5028522a25" name="meta-freescale" path="sources/meta-freescale"/>
@@ -32,7 +32,7 @@
       <linkfile src="imx/README" dest="README-IMXBSP"/>
   </project>
 
-  <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="imx-alexa-sdk-next">
+  <project remote="avs-release" name="meta-avs-demos" path="sources/meta-avs-demos" revision="imx-alexa-sdk">
      <linkfile src="tools/avs-setup-demo-7dpicopi.sh" dest="avs-setup-demo.sh"/>
      <linkfile src="README-IMX7D-PICOPI.md" dest="README-AVS-DEMO-MX7D-PICOPI"/>
   </project>
