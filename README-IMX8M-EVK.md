@@ -21,7 +21,7 @@ Let's call this as <yocto_dir>
 
 
     $ cd <yocto_dir>
-    $ repo init -u https://bitbucket.sw.nxp.com/scm/vs/meta-avs-demos.git -b internal -m imx-4.9.51-8mq_ga.xml
+    $ repo init -u https://source.codeaurora.org/external/imxsupport/meta-avs-demos -b master -m imx-alexa-sdk-4.9.51-8mq_ga.xml
 
 
 #### Download the AVS BSP build environment:

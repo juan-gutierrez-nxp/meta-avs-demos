@@ -20,10 +20,11 @@ enviroment.
 Let's call this as <yocto_dir>
 
 
-Install the regular BSP (as usually does for a regular image)
+Install the regular BSP (as usually does for a regular image).
+For example for a 6ULL or 7DSabreSD 4.9.11 GA Release
 
     $ cd <yocto_dir>
-    $ repo init -u https://source.codeaurora.org/external/imx/imx-manifest -b imx-linux-morty -m imx-alexa-sdk-4.9.11.xml
+    $ repo init -u https://source.codeaurora.org/external/imx/imx-manifest -b imx-linux-morty -m imx-4.9.11-1.0.0_ga.xml
 
 
 #### Download the regular BSP build environment:
@@ -33,7 +34,7 @@ Install the regular BSP (as usually does for a regular image)
 #### Install the meta-avs-demo layer and creat a avs-setup-demo.sh symlink 
 
     $ cd <yocto_dir>/sources
-    $ git clone https://bitbucket.sw.nxp.com/scm/vs/meta-avs-demos.git --branch imx-alexa-sdk-next
+    $ git clone https://source.codeaurora.org/external/imxsupport/meta-avs-demos --branch imx-alexa-sdk
 
     $ cd <yocto_dir>
     $ ln -s sources/meta-avs-demos/tools/avs-setup-demo-imx.sh avs-setup-demo.sh
