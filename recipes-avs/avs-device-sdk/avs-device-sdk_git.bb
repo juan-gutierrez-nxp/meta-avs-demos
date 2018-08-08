@@ -18,7 +18,7 @@ SRC_URI[melodic01short.md5sum] = "fa0a26a6ec836974d853631e26036ed3"
 SRC_URI[melodic02tth.md5sum] = "0c943e4d49907bb345277656c37e55db"
 SRC_URI[melodic02short.md5sum] = "4638324a21d6264f0dc2c6d586371da8"
 
-SRCREV = "8bf0160c5e56a3d5ebc1e1caeab14afc8658b0da"
+SRCREV = "32f85e26a14149ab3d693f1cf5b44eacd43118d2"
 #SRCREV = "${AUTOREV}"
 
 INSANE_SKIP_${PN} = "dev-so"
@@ -43,7 +43,7 @@ EXTRA_OECMAKE = " \
 TARGET_CXXFLAGS += " -D_GLIBCXX_USE_CXX11_ABI=0 "
 
 RDEPENDS_${PN} += "bash"
-DEPENDS = " \
+DEPENDS += " \
 	curl \
 	sqlite3 \
     portaudio-v19 \
