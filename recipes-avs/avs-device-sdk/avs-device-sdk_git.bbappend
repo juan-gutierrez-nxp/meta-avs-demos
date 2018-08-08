@@ -3,15 +3,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 DEPENDS_append_pico-pi-8m-voicehat += " pryonlite"
 
 SRC_URI_append_pico-pi-8m-voicehat += " \
-    file://0001-Integrate-AWELib-with-Alexa-SDK-1.7.patch \
-    file://0003-Reducing-timeout-For-ThinkingToIdel.patch \
-    file://0001-Add-loopback-to-feed-the-audio-of-external-app-to-AW.patch \
-    file://0001-Convert-loopback-buffer-to-32-bits.patch \
-    file://0001-Send-AWELib-Output-to-the-Playback-path.patch \
-    file://0002-Divide-by-2-to-avoid-saturation.patch \
-    file://0001-Mix-the-audio-buffers-in-a-more-proper-way.patch \
-    file://0002-Workaround-for-the-cloud-based-false-wake-word-detec.patch \
-    file://0001-Update-the-AWB-header-and-model-names.patch \
+    file://0001-DSPC-Add-DSPC-AudioWeaver-support-within-Sample-App.patch \
 "
 EXTRA_OECMAKE_pico-pi-8m-voicehat = " \
     -DCMAKE_BUILD_TYPE=RELEASE \
