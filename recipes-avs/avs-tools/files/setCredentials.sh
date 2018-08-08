@@ -1,4 +1,11 @@
-#!/bin/bash
+#!/bin/sh
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+GRAY='\033[0;37m'
+NC='\033[0m' # No Color
+
 echo ""
 echo "===================================================================="
 echo " Please provide the following info of your AVS device               "
@@ -26,6 +33,7 @@ if [ -f $SDK_CBL_AUTH_DELEGATE_DATABASE_FILE_PATH ]; then
     rm $SDK_CBL_AUTH_DELEGATE_DATABASE_FILE_PATH
 fi
 
+echo -e "${YELLOW}"
 echo "============================= WARNING ============================== "
 echo ""
 echo " From SDK Version 1.7 and so on, the Client ID captured is from the  "
@@ -33,7 +41,7 @@ echo " \"Other devices and platforms\" tab within the Security Profile     "
 echo " section, and NOT the Client ID from the \"Web\" tab as it used to be"
 echo ""
 echo "==================================================================== "
-echo ""
+echo -e "${NC}"
 
 while true; do
 

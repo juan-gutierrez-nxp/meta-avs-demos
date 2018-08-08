@@ -16,13 +16,16 @@ SRC_URI = " \
 	file://setCredentials.sh \
 	file://setUTCTime.sh \
 	file://startAVSImage.service \
+	file://startImage.sh \
+	file://setupAVS.sh \
+	file://runAlexaSampleApp.sh \
 "
 
 do_install() {
     install -d -m 0755 ${D}${DEST_ETC_DIR}
     install -d -m 0755 ${D}${DEST_SCRIPTS_DIR}
     install ${S}/*.sh ${D}${DEST_SCRIPTS_DIR}
-    install ${S}/alexa_sdk/* ${D}${DEST_ETC_DIR}
+    install ${S}/startImage.sh ${D}${DEST_ETC_DIR}
 
     if ${@bb.utils.contains('DISTRO_FEATURES','systemd','true','false',d)}; then
         install -d ${D}${systemd_unitdir}/system
@@ -31,6 +34,7 @@ do_install() {
 
 	cd ${D}/${DEST_SDK_DIR}
     ln -s ${DEST_SCRIPTS_DIR}/setupAVS.sh setupAVS.sh
+    ln -s ${DEST_SCRIPTS_DIR}/runAlexaSampleApp.sh runAlexaSampleApp.sh
 }
 
 FILES_${PN} = "${DEST_ETC_DIR} ${DEST_SCRIPTS_DIR} ${DEST_SDK_DIR}"
