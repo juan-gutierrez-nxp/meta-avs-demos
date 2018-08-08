@@ -1,0 +1,103 @@
+From 1731a831d1bb59de2bc5b1fcc792a3a54d4cd658 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Tue, 16 Jan 2018 21:58:19 +0000
+Subject: [PATCH] SampleApp: Sample code patch to add support for
+ QT5DisplayCards
+
+This sample code show how to add the code to notify the QT5DisplayCards
+application about the change on the Alxa states. It send the Alexa SDK
+Event/State through MessageQ by using the SendMessageQ application. A
+proper place to send the update of the state is when priting the same
+on the console.
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ SampleApp/src/GuiRenderer.cpp | 16 ++++++++++++++++
+ SampleApp/src/UIManager.cpp   |  6 ++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/SampleApp/src/GuiRenderer.cpp b/SampleApp/src/GuiRenderer.cpp
+index 55af813..80c2fe1 100644
+--- a/SampleApp/src/GuiRenderer.cpp
++++ b/SampleApp/src/GuiRenderer.cpp
+@@ -13,6 +13,9 @@
+  * permissions and limitations under the License.
+  */
+ 
++#include <iostream>
++#include <fstream>
++
+ #include <rapidjson/document.h>
+ #include <rapidjson/error/en.h>
+ 
+@@ -92,6 +95,11 @@ void GuiRenderer::renderTemplateCard(const std::string& jsonPayload, avsCommon::
+     buffer += RENDER_FOOTER;
+ #endif
+     ConsolePrinter::simplePrint(buffer);
++
++    std::ofstream saveFile ("displayCard.json");
++    saveFile << jsonPayload;
++    saveFile.close();
++    system("sendAlexaMsgQ RENDER");
+ }
+ 
+ void GuiRenderer::clearTemplateCard() {
+@@ -124,6 +132,14 @@ void GuiRenderer::renderPlayerInfoCard(
+     buffer += jsonPayload + "\n";
+     buffer += RENDER_FOOTER;
+     ConsolePrinter::simplePrint(buffer);
++
++    std::ofstream saveFile ("musicCard.json");
++    saveFile << jsonPayload;
++    saveFile.close();
++    std::string command = "sendAlexaMsgQ \"MUSIC " + \
++			playerActivityToString(info.audioPlayerState) + \
++			" " + std::to_string(info.offset.count()) + " \"";
++    system(command.c_str());
+ }
+ 
+ void GuiRenderer::clearPlayerInfoCard() {
+diff --git a/SampleApp/src/UIManager.cpp b/SampleApp/src/UIManager.cpp
+index 349ac30..e135ab2 100644
+--- a/SampleApp/src/UIManager.cpp
++++ b/SampleApp/src/UIManager.cpp
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include <sstream>
++#include <iostream>
+ 
+ #include "SampleApp/UIManager.h"
+ 
+@@ -367,16 +368,20 @@ void UIManager::printState() {
+         switch (m_dialogState) {
+             case DialogUXState::IDLE:
+                 ConsolePrinter::prettyPrint("Alexa is currently idle!");
++		system("sendAlexaMsgQ IDLE");
+                 return;
+             case DialogUXState::LISTENING:
+                 ConsolePrinter::prettyPrint("Listening...");
++		system("sendAlexaMsgQ LISTENING");
+                 return;
+             case DialogUXState::THINKING:
+                 ConsolePrinter::prettyPrint("Thinking...");
++		system("sendAlexaMsgQ THINKING");
+                 return;
+                 ;
+             case DialogUXState::SPEAKING:
+                 ConsolePrinter::prettyPrint("Speaking...");
++		system("sendAlexaMsgQ SPEAKING");
+                 return;
+             /*
+              * This is an intermediate state after a SPEAK directive is completed. In the case of a speech burst the
+@@ -384,6 +389,7 @@ void UIManager::printState() {
+              * nothing for this state.
+              */
+             case DialogUXState::FINISHED:
++		system("sendAlexaMsgQ FINISHED");
+                 return;
+         }
+     }
+-- 
+1.9.1
+

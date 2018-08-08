@@ -1,0 +1,27 @@
+From e428390ef7db73dfccf8e5fbf17ca5ed0ebc81e8 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Fri, 20 Jul 2018 01:08:09 +0000
+Subject: [PATCH 2/2] Workaround for the cloud based false wake word detection
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ SampleApp/src/PortAudioMicrophoneWrapper.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/SampleApp/src/PortAudioMicrophoneWrapper.cpp b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+index 6261895..6d12aae 100644
+--- a/SampleApp/src/PortAudioMicrophoneWrapper.cpp
++++ b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+@@ -651,7 +651,8 @@ int PortAudioMicrophoneWrapper::PortAudioHardwareCallback(
+                 }
+ 
+                 avsCommon::avs::AudioInputStream::Index beginIndexOfStreamWriter;
+-                beginIndexOfStreamWriter = wrapper->m_writer->tell()-startIndex[0].iVal+BLOCK_SIZE;
++//                beginIndexOfStreamWriter = wrapper->m_writer->tell()-startIndex[0].iVal+BLOCK_SIZE;
++                beginIndexOfStreamWriter = wrapper->m_writer->tell()-startIndex[0].iVal - 4*BLOCK_SIZE;
+                 avsCommon::avs::AudioInputStream::Index endIndexOfStreamWriter;
+                 endIndexOfStreamWriter = wrapper->m_writer->tell()-endIndex[0].iVal+BLOCK_SIZE;
+                 wrapper->m_keywordObserver->onKeyWordDetected(wrapper->m_audioInputStream, "ALEXA", beginIndexOfStreamWriter, endIndexOfStreamWriter);
+-- 
+1.9.1
+

@@ -1,0 +1,26 @@
+From a53a302ac96cf20ff266a7836d985d6c864a2652 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Wed, 18 Jul 2018 23:52:20 +0000
+Subject: [PATCH 2/2] Divide by 2 to avoid saturation
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ SampleApp/src/PortAudioMicrophoneWrapper.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SampleApp/src/PortAudioMicrophoneWrapper.cpp b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+index 3985acb..d3afa4f 100644
+--- a/SampleApp/src/PortAudioMicrophoneWrapper.cpp
++++ b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+@@ -546,7 +546,7 @@ int PortAudioMicrophoneWrapper::PortAudioHardwareCallback(
+     wrapper->m_alertsMediaPlayer->tryPullAppSink(alertsMediaPlayerBuffer, BLOCK_SIZE * NUM_MEDIA_CHANNELS * sizeof(Sample));
+ 
+     for (i =0; i < (BLOCK_SIZE * NUM_MEDIA_CHANNELS); i++) {
+-		  avsOutBuffer[i] = (SAMPLE)(buffer[i] << 16) + speakMediaPlayerBuffer[i] + audioMediaPlayerBuffer[i] + alertsMediaPlayerBuffer[i];
++		  avsOutBuffer[i] = ((SAMPLE)(buffer[i] << 16))/2 + speakMediaPlayerBuffer[i] + audioMediaPlayerBuffer[i] + alertsMediaPlayerBuffer[i];
+     }
+ 
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,1075 @@
+From 62532c3dbdd70f5fc66aecf1e2c4785dc22f7b1a Mon Sep 17 00:00:00 2001
+From: Sabeel Syed <sabeel.syed@nxp.com>
+Date: Wed, 16 May 2018 23:14:16 +0000
+Subject: [PATCH 1/2] Integrate AWELib with Alexa SDK 1.7
+
+Integrate DSPConcpets AWELib on Alexa SDK 1.7, so DSPC WakeWord
+is launched and used within the Alexa SDK.
+
+Signed-off-by: Sabeel Syed <sabeel.syed@nxp.com>
+---
+ .../include/DefaultClient/DefaultClient.h          |  18 +
+ .../DefaultClient/src/DefaultClient.cpp            |   9 +
+ KWD/KWDProvider/src/CMakeLists.txt                 |   4 +-
+ MediaPlayer/include/MediaPlayer/MediaPlayer.h      |  34 ++
+ MediaPlayer/src/CMakeLists.txt                     |   2 +-
+ MediaPlayer/src/MediaPlayer.cpp                    | 154 +++++++-
+ .../include/SampleApp/PortAudioMicrophoneWrapper.h |  35 +-
+ SampleApp/src/CMakeLists.txt                       |   9 +-
+ SampleApp/src/PortAudioMicrophoneWrapper.cpp       | 420 +++++++++++++++++++--
+ SampleApp/src/SampleApplication.cpp                |  15 +-
+ build/cmake/KeywordDetector.cmake                  |  10 +-
+ 11 files changed, 653 insertions(+), 57 deletions(-)
+
+diff --git a/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h b/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
+index 02727ec..eb15c17 100644
+--- a/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
++++ b/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
+@@ -42,6 +42,7 @@
+ #include <AVSCommon/SDKInterfaces/DialogUXStateObserverInterface.h>
+ #include <AVSCommon/SDKInterfaces/SingleSettingObserverInterface.h>
+ #include <AVSCommon/SDKInterfaces/TemplateRuntimeObserverInterface.h>
++#include <AVSCommon/SDKInterfaces/AudioInputProcessorObserverInterface.h>
+ #include <AVSCommon/Utils/LibcurlUtils/HTTPContentFetcherFactory.h>
+ #include <AVSCommon/Utils/MediaPlayer/MediaPlayerInterface.h>
+ #include <AVSCommon/Utils/Network/InternetConnectionMonitor.h>
+@@ -185,6 +186,23 @@ public:
+      */
+     void stopForegroundActivity();
+ 
++
++    /**
++     * Adds an observer to be notified of AudioInputProcessor state.
++     *
++     * @param observer The observer to add.
++     */
++    void addAudioInputProcessorObserver(
++        std::shared_ptr<avsCommon::sdkInterfaces::AudioInputProcessorObserverInterface> observer);
++
++    /**
++     * Removes an observer to be notified of AudioInputProcessor state.
++     *
++     * @param observer The observer to remove.
++     */
++    void removeAudioInputProcessorObserver(
++        std::shared_ptr<avsCommon::sdkInterfaces::AudioInputProcessorObserverInterface> observer);
++
+     /**
+      * Adds an observer to be notified of Alexa dialog related UX state.
+      *
+diff --git a/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp b/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp
+index 9f089ab..619acd2 100644
+--- a/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp
++++ b/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp
+@@ -820,6 +820,15 @@ void DefaultClient::disconnect() {
+ 
+ void DefaultClient::stopForegroundActivity() {
+     m_audioFocusManager->stopForegroundActivity();
++}	
++void DefaultClient::addAudioInputProcessorObserver(
++    std::shared_ptr<avsCommon::sdkInterfaces::AudioInputProcessorObserverInterface> observer) {
++    m_audioInputProcessor->addObserver(observer);
++}
++
++void DefaultClient::removeAudioInputProcessorObserver(
++    std::shared_ptr<avsCommon::sdkInterfaces::AudioInputProcessorObserverInterface> observer) {
++    m_audioInputProcessor->removeObserver(observer);
+ }
+ 
+ void DefaultClient::addAlexaDialogStateObserver(
+diff --git a/KWD/KWDProvider/src/CMakeLists.txt b/KWD/KWDProvider/src/CMakeLists.txt
+index 207abe7..7dc5930 100644
+--- a/KWD/KWDProvider/src/CMakeLists.txt
++++ b/KWD/KWDProvider/src/CMakeLists.txt
+@@ -2,7 +2,7 @@ add_library(KeywordDetectorProvider SHARED
+     KeywordDetectorProvider.cpp)
+ 
+ target_include_directories(KeywordDetectorProvider PUBLIC
+-	"${KeywordDetectorProvider_SOURCE_DIR}/include")
++	"${KeywordDetectorProvider_SOURCE_DIR}/include" "${KWD_SOURCE_DIR}/include")
+ 
+ target_link_libraries(KeywordDetectorProvider KWD AVSCommon)
+ 
+@@ -15,4 +15,4 @@ if(KITTAI_KEY_WORD_DETECTOR)
+ endif()
+ 
+ # install target
+-asdk_install()
+\ No newline at end of file
++asdk_install()
+diff --git a/MediaPlayer/include/MediaPlayer/MediaPlayer.h b/MediaPlayer/include/MediaPlayer/MediaPlayer.h
+index 1f820fc..4874883 100644
+--- a/MediaPlayer/include/MediaPlayer/MediaPlayer.h
++++ b/MediaPlayer/include/MediaPlayer/MediaPlayer.h
+@@ -29,6 +29,8 @@
+ #include <gst/gst.h>
+ #include <gst/app/gstappsrc.h>
+ #include <gst/base/gstbasesink.h>
++#include <gst/app/gstappsink.h>
++#include <gst/audio/audio.h>
+ 
+ #include <AVSCommon/SDKInterfaces/HTTPContentFetcherInterfaceFactoryInterface.h>
+ #include <AVSCommon/SDKInterfaces/SpeakerInterface.h>
+@@ -115,6 +117,16 @@ public:
+     GstElement* getDecoder() const override;
+     GstElement* getPipeline() const override;
+     guint queueCallback(const std::function<gboolean()>* callback) override;
++
++    /// Another thread like PortAudioMicrophoneWrapper can set up the appsink with setupAppSink
++    bool setupAppSink(GstAudioFormat audioFormat, unsigned int numChannels, unsigned int sampleRate, unsigned int blockSize);
++
++    /// Another thread like PortAudioMicrophoneWrapper can pull data blocks from the appsink with tryPullAppSink
++    void tryPullAppSink(void *dest, unsigned int destSize);
++
++    /// Helper thread to convert older blocking GStreamer API to a non-blocking API
++    void pullAppSink();
++
+     /// @}
+ 
+     /// @name Overriden UrlContentToAttachmentConverter::ErrorObserverInterface methods.
+@@ -151,6 +163,12 @@ private:
+         /// The converter element.
+         GstElement* converter;
+ 
++        /// The resampler element.
++        GstElement* resampler;
++
++        /// The rebuffer element.
++        GstElement* rebuffer;
++
+         /// The volume element.
+         GstElement* volume;
+ 
+@@ -171,6 +189,8 @@ private:
+                 appsrc{nullptr},
+                 decoder{nullptr},
+                 converter{nullptr},
++                resampler{nullptr},
++                rebuffer{nullptr},
+                 volume{nullptr},
+                 audioSink{nullptr},
+                 pipeline{nullptr} {};
+@@ -561,6 +581,20 @@ private:
+ 
+     /// Stream offset before we teardown the pipeline
+     std::chrono::milliseconds m_offsetBeforeTeardown;
++
++
++    /// Thread that continually checks for new data in the GStreamer appsink
++    std::thread m_pullThread;
++
++    /// Current GStreamer sample that can be pulled by a hardware callback
++    GstSample* m_sample;
++
++    /// Protection of m_sample
++    std::mutex m_mutex;
++
++    /// Signaling variable to indicate that more samples can be pulled from the GStreamer appsink
++    std::condition_variable m_ack;
++
+ };
+ 
+ }  // namespace mediaPlayer
+diff --git a/MediaPlayer/src/CMakeLists.txt b/MediaPlayer/src/CMakeLists.txt
+index c8b92d5..06db77a 100644
+--- a/MediaPlayer/src/CMakeLists.txt
++++ b/MediaPlayer/src/CMakeLists.txt
+@@ -13,7 +13,7 @@ target_include_directories(MediaPlayer PUBLIC
+     "${GST_INCLUDE_DIRS}"
+     "${PlaylistParser_SOURCE_DIR}/include")
+ 
+-target_link_libraries(MediaPlayer "${GST_LDFLAGS}" AVSCommon PlaylistParser)
++target_link_libraries(MediaPlayer "${GST_LDFLAGS}" gstaudio-1.0 AVSCommon PlaylistParser)
+ 
+ # install target
+ asdk_install()
+diff --git a/MediaPlayer/src/MediaPlayer.cpp b/MediaPlayer/src/MediaPlayer.cpp
+index cb3204f..357d8d1 100644
+--- a/MediaPlayer/src/MediaPlayer.cpp
++++ b/MediaPlayer/src/MediaPlayer.cpp
+@@ -16,6 +16,8 @@
+ #include <cmath>
+ #include <cstring>
+ #include <unordered_map>
++#include <pthread.h> // for setting thread priorities
++
+ 
+ #include <AVSCommon/AVS/Attachment/AttachmentReader.h>
+ #include <AVSCommon/AVS/SpeakerConstants/SpeakerConstants.h>
+@@ -570,6 +572,125 @@ bool MediaPlayer::init() {
+     return true;
+ }
+ 
++
++/// Another thread like PortAudioMicrophoneWrapper can pull data blocks from the appsink with tryPullAppSink
++bool MediaPlayer::setupAppSink(GstAudioFormat audioFormat, unsigned int numChannels, unsigned int sampleRate, unsigned int blockSize) {
++    int sampleSize;
++
++    // TODO: Support other audio formats if necessary
++    if (audioFormat == GST_AUDIO_FORMAT_S32LE) {
++        sampleSize = 4;
++    }
++    else if (audioFormat == GST_AUDIO_FORMAT_S16LE) {
++        sampleSize = 2;
++    }
++    else {
++        ACSDK_ERROR(LX("setupAudioSink").d("reason", "unsupported audio format"));
++        return false;
++    }
++
++    unsigned int blockSizeInBytes = blockSize*sampleSize*numChannels;
++
++    // The rebuffer element breaks the GStreamer packets into equal chunks
++    // They are set to the AudioWeaver block size from PortAudioMicrophoneWrapper
++    g_object_set(m_pipeline.rebuffer, "min", blockSizeInBytes, "max", blockSizeInBytes, NULL);
++
++    GstAudioInfo info;
++    gst_audio_info_set_format(&info, GST_AUDIO_FORMAT_S32LE, sampleRate, numChannels, NULL);
++    GstCaps* audioCaps = gst_audio_info_to_caps(&info);
++    // Note: GStreamer block size is in bytes
++    g_object_set(m_pipeline.audioSink,
++        "blocksize", blockSizeInBytes,
++        // "emit-signals", TRUE,
++        "caps", audioCaps,
++        "max-buffers", 2, // TODO: Should the user be allowed to set this?
++        NULL);
++
++    // Verify the initial value of m_state
++    m_sample = 0;
++
++    // Spawn a thread that calls the gst_app_sink_pull_sample function
++    m_pullThread = std::thread(&MediaPlayer::pullAppSink, this);
++
++    sched_param scheduler_parameters;
++    int policy;
++    pthread_getschedparam(m_pullThread.native_handle(), &policy, &scheduler_parameters);
++    // TODO: Expose this parameter to the rest of the application
++    scheduler_parameters.sched_priority = 2;
++    if (pthread_setschedparam(m_pullThread.native_handle(), SCHED_FIFO, &scheduler_parameters)) {
++        std::cout << "Failed to set scheduler parameters (errno= " << std::strerror(errno) << "). Are you root?\n";
++        return false;
++    }
++
++    return true;
++}
++
++/// Another thread like PortAudioMicrophoneWrapper can set up the appsink with setupAppSink
++void MediaPlayer::tryPullAppSink(void *dest, unsigned int destSize) {
++    std::unique_lock<std::mutex> locker(m_mutex);
++    GstSample* sample = m_sample;
++    locker.unlock();
++
++    if (sample) { // there is data in the appsink
++        GstCaps* audioCaps = gst_sample_get_caps(sample);
++        (void)audioCaps; // prevent compiler warning when not in debug configuration
++        GstBuffer* buffer = gst_sample_get_buffer(sample);
++        unsigned int bufferSize = gst_buffer_get_size(buffer);
++
++        ACSDK_DEBUG9(LX("tryPull")
++                       .d("caps", gst_caps_to_string(audioCaps))
++                       .d("bufferSize", bufferSize)
++                       .d("duration", GST_BUFFER_DURATION(buffer)));
++
++        if (bufferSize != destSize) {
++            ACSDK_ERROR(LX("tryPull")
++                        .d("bufferSize", bufferSize)
++                        .d("destSize", destSize));
++        }
++        else {
++            GstMapInfo map;
++            gst_buffer_map(buffer, &map, GST_MAP_READ);
++
++            // If the sizes match up, perform a simple copy
++            memcpy(dest, map.data, destSize);
++            gst_buffer_unmap(buffer, &map);
++        }
++
++        gst_sample_unref(sample);
++
++        std::unique_lock<std::mutex> locker(m_mutex);
++        m_sample = 0; // reset the m_sample "state"
++        locker.unlock();
++
++        // Let the pullAppSink know it's OK to pull more samples
++        m_ack.notify_one();
++    }
++    else { // there is no data in the appsink, so send back an zero-filled buffer
++        memset(dest, 0, destSize);
++    }
++}
++
++void MediaPlayer::pullAppSink() {
++    GstSample* sample;
++
++    while (true) {
++        // EOS (end of stream) will cause gst_app_sink_pull_sample to return, so add a sleep call
++        if (gst_app_sink_is_eos((GstAppSink *)(m_pipeline.audioSink))) {
++            std::this_thread::sleep_for(std::chrono::milliseconds(100));
++            continue;
++        }
++
++        sample = gst_app_sink_pull_sample((GstAppSink *)(m_pipeline.audioSink));
++        if (sample) {
++            std::unique_lock<std::mutex> locker(m_mutex);
++            m_sample = sample;
++            // wait for the tryPullAppSink function to acknowledge receipt of sample
++            m_ack.wait(locker, [this]() { return (m_sample==0);}); // can get spurious wakes, so using a predicate (sample==0)
++            locker.unlock();
++        }
++    }
++}
++
+ bool MediaPlayer::setupPipeline() {
+     m_pipeline.converter = gst_element_factory_make("audioconvert", "converter");
+     if (!m_pipeline.converter) {
+@@ -577,6 +698,18 @@ bool MediaPlayer::setupPipeline() {
+         return false;
+     }
+ 
++    m_pipeline.resampler = gst_element_factory_make("audioresample", "resampler");
++    if (!m_pipeline.resampler) {
++        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createResamplerElementFailed"));
++        return false;
++    }
++    m_pipeline.rebuffer = gst_element_factory_make("rndbuffersize", "rebuffer");
++    if (!m_pipeline.rebuffer) {
++        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createRebufferElementFailed"));
++        return false;
++    }
++
++
+     m_pipeline.volume = gst_element_factory_make("volume", "volume");
+     if (!m_pipeline.volume) {
+         ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createVolumeElementFailed"));
+@@ -586,7 +719,7 @@ bool MediaPlayer::setupPipeline() {
+     std::string audioSinkElement;
+     ConfigurationNode::getRoot()[MEDIAPLAYER_CONFIGURATION_ROOT_KEY].getString(
+         MEDIAPLAYER_AUDIO_SINK_KEY, &audioSinkElement, "autoaudiosink");
+-    m_pipeline.audioSink = gst_element_factory_make(audioSinkElement.c_str(), "audio_sink");
++    m_pipeline.audioSink = gst_element_factory_make("appsink", "audio_sink");
+     if (!m_pipeline.audioSink) {
+         ACSDK_ERROR(LX("setupPipelineFailed")
+                         .d("reason", "createAudioSinkElementFailed")
+@@ -665,14 +798,16 @@ bool MediaPlayer::setupPipeline() {
+ 
+     // Link only the queue, converter, volume, and sink here. Src will be linked in respective source files.
+     gst_bin_add_many(
+-        GST_BIN(m_pipeline.pipeline), m_pipeline.converter, m_pipeline.volume, m_pipeline.audioSink, nullptr);
++        GST_BIN(m_pipeline.pipeline), m_pipeline.converter, m_pipeline.resampler, m_pipeline.rebuffer, m_pipeline.volume, m_pipeline.audioSink, nullptr);
++
++#if 0
+ 
+     if (m_pipeline.resample != nullptr && m_pipeline.caps != nullptr) {
+         // Set up pipeline with the resampler
+-        gst_bin_add_many(GST_BIN(m_pipeline.pipeline), m_pipeline.resample, m_pipeline.caps, nullptr);
++        //gst_bin_add_many(GST_BIN(m_pipeline.pipeline), m_pipeline.resample, m_pipeline.caps, nullptr);
+ 
+         if (!gst_element_link_many(
+-                m_pipeline.converter, m_pipeline.volume, m_pipeline.resample, m_pipeline.caps, nullptr)) {
++                m_pipeline.resampler, m_pipeline.converter, m_pipeline.rebuffer, m_pipeline.volume, /* m_pipeline.resample,*/ m_pipeline.caps, nullptr)) {
+             ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createVolumeToConverterLinkFailed"));
+             return false;
+         }
+@@ -683,11 +818,20 @@ bool MediaPlayer::setupPipeline() {
+         }
+     } else {
+         // No output format specified, set up a normal pipeline
+-        if (!gst_element_link_many(m_pipeline.converter, m_pipeline.volume, m_pipeline.audioSink, nullptr)) {
++        if (!gst_element_link_many(m_pipeline.resampler, m_pipeline.converter, m_pipeline.rebuffer, m_pipeline.volume, m_pipeline.audioSink, nullptr)) {
+             ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createResampleToSinkLinkFailed"));
+             return false;
+         }
+     }
++    
++#else
++
++	if (!gst_element_link_many(m_pipeline.converter, m_pipeline.resampler, m_pipeline.rebuffer, m_pipeline.volume, m_pipeline.audioSink, nullptr)) {
++    	ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createResampleToSinkLinkFailed"));
++        return false;
++    }
++
++#endif
+ 
+     return true;
+ }
+diff --git a/SampleApp/include/SampleApp/PortAudioMicrophoneWrapper.h b/SampleApp/include/SampleApp/PortAudioMicrophoneWrapper.h
+index 315c44b..2d50dca 100644
+--- a/SampleApp/include/SampleApp/PortAudioMicrophoneWrapper.h
++++ b/SampleApp/include/SampleApp/PortAudioMicrophoneWrapper.h
+@@ -20,8 +20,11 @@
+ #include <thread>
+ 
+ #include <AVSCommon/AVS/AudioInputStream.h>
++#include <MediaPlayer/MediaPlayer.h>
++#include <SampleApp/KeywordObserver.h>
+ 
+ #include <portaudio.h>
++#include <pa_linux_alsa.h>
+ 
+ namespace alexaClientSDK {
+ namespace sampleApp {
+@@ -35,7 +38,12 @@ public:
+      * @param stream The shared data stream to write to.
+      * @return A unique_ptr to a @c PortAudioMicrophoneWrapper if creation was successful and @c nullptr otherwise.
+      */
+-    static std::unique_ptr<PortAudioMicrophoneWrapper> create(std::shared_ptr<avsCommon::avs::AudioInputStream> stream);
++    static std::unique_ptr<PortAudioMicrophoneWrapper> create(
++        std::shared_ptr<avsCommon::avs::AudioInputStream> stream,
++        std::shared_ptr<alexaClientSDK::sampleApp::KeywordObserver> keywordObserver,
++        std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> speakMediaPlayer,
++        std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> audioMediaPlayer,
++        std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> alertsMediaPlayer);
+ 
+     /**
+      * Stops streaming from the microphone.
+@@ -62,22 +70,27 @@ private:
+      *
+      * @param stream The shared data stream to write to.
+      */
+-    PortAudioMicrophoneWrapper(std::shared_ptr<avsCommon::avs::AudioInputStream> stream);
++    PortAudioMicrophoneWrapper(
++        std::shared_ptr<avsCommon::avs::AudioInputStream> stream,
++        std::shared_ptr<alexaClientSDK::sampleApp::KeywordObserver> keywordObserver,
++        std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> speakMediaPlayer,
++        std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> audioMediaPlayer,
++        std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> alertsMediaPlayer);
+ 
+     /**
+      * The callback that PortAudio will issue when audio is avaiable to read.
+      *
+-     * @param inputBuffer The temporary buffer that microphone audio data will be available in.
+-     * @param outputBuffer Not used here.
++     * @param microphoneBuffer The temporary buffer that microphone audio data will be available in.
++     * @param speakerBuffer The buffer that is passed to the speaker device.
+      * @param numSamples The number of samples available to consume.
+      * @param timeInfo Time stamps indicated when the first sample in the buffer was captured. Not used here.
+      * @param statusFlags Flags that tell us when underflow or overflow conditions occur. Not used here.
+      * @param userData A user supplied pointer.
+      * @return A PortAudio code that will indicate how PortAudio should continue.
+      */
+-    static int PortAudioCallback(
+-        const void* inputBuffer,
+-        void* outputBuffer,
++    static int PortAudioHardwareCallback(
++        const void* microphoneBuffer,
++        void* speakerBuffer,
+         unsigned long numSamples,
+         const PaStreamCallbackTimeInfo* timeInfo,
+         PaStreamCallbackFlags statusFlags,
+@@ -98,11 +111,17 @@ private:
+     /// The stream of audio data.
+     const std::shared_ptr<avsCommon::avs::AudioInputStream> m_audioInputStream;
+ 
++    const std::shared_ptr<alexaClientSDK::sampleApp::KeywordObserver> m_keywordObserver;
++    const std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> m_speakMediaPlayer;
++    const std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> m_audioMediaPlayer;
++    const std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> m_alertsMediaPlayer;
++
++
+     /// The writer that will be used to writer audio data into the sds.
+     std::shared_ptr<avsCommon::avs::AudioInputStream::Writer> m_writer;
+ 
+     /// The PortAudio stream
+-    PaStream* m_paStream;
++    PaStream* m_paHardwareStream;
+ 
+     /**
+      * A lock to seralize access to startStreamingMicrophoneData() and stopStreamingMicrophoneData() between different
+diff --git a/SampleApp/src/CMakeLists.txt b/SampleApp/src/CMakeLists.txt
+index b4157bb..110eb0a 100644
+--- a/SampleApp/src/CMakeLists.txt
++++ b/SampleApp/src/CMakeLists.txt
+@@ -26,7 +26,9 @@ target_include_directories(SampleApp PUBLIC
+     "${AudioResources_SOURCE_DIR}/include"
+     "${RegistrationManager_SOURCE_DIR}/include"
+     "${ESP_SOURCE_DIR}/include"
+-    "${PORTAUDIO_INCLUDE_DIR}")
++    "${PORTAUDIO_INCLUDE_DIR}"
++    "${AUDIOWEAVER_INCLUDE_DIR}"
++    "${AUDIOWEAVER_INCLUDE_DIR}/include")
+ 
+ target_link_libraries(SampleApp 
+     DefaultClient
+@@ -35,8 +37,9 @@ target_link_libraries(SampleApp
+     MediaPlayer
+     SQLiteStorage
+     ESP
+-    "${PORTAUDIO_LIB_PATH}")
+-
++    "${PORTAUDIO_LIB_PATH}"
++    "${AUDIOWEAVER_LIB_PATH}/AWELib.so")
++    
+ if(KWD)
+     target_link_libraries(SampleApp KeywordDetectorProvider)
+ endif()
+diff --git a/SampleApp/src/PortAudioMicrophoneWrapper.cpp b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+index 91055af..cba9e52 100644
+--- a/SampleApp/src/PortAudioMicrophoneWrapper.cpp
++++ b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+@@ -22,16 +22,35 @@
+ #include <AVSCommon/Utils/Logger/Logger.h>
+ #include "SampleApp/PortAudioMicrophoneWrapper.h"
+ #include "SampleApp/ConsolePrinter.h"
++#include <gst/audio/audio.h> // for GStreamer audio format types
++#include "TcpIO2.h"
++#include "awelib.h"
+ 
+ namespace alexaClientSDK {
+ namespace sampleApp {
+ 
+-using avsCommon::avs::AudioInputStream;
++// TODO: Test out 16-bit configurations
++#define PA_SAMPLE_TYPE paInt32 // or #define PA_SAMPLE_TYPE paInt16
++#define GSTREAMER_SAMPLE_FORMAT GST_AUDIO_FORMAT_S32LE // or #define GSTREAMER_SAMPLE_FORMAT GST_AUDIO_FORMAT_S16LE
++typedef int SAMPLE; // or typedef short SAMPLE;
+ 
+-static const int NUM_INPUT_CHANNELS = 1;
+-static const int NUM_OUTPUT_CHANNELS = 0;
+-static const double SAMPLE_RATE = 16000;
+-static const unsigned long PREFERRED_SAMPLES_PER_CALLBACK = paFramesPerBufferUnspecified;
++static const unsigned int NUM_MEDIA_CHANNELS = 2;
++static const unsigned int NUM_AVS_CHANNELS = 1;
++
++
++#include "VoiceUI_imx8_2mic_AVS_v3b_1mb_sensory_AWELibSimple.h"
++static const unsigned int NUM_HARDWARE_INPUT_CHANNELS = 2;
++static const unsigned int NUM_HARDWARE_OUTPUT_CHANNELS = 2;
++static const unsigned int NUM_AWE_INPUT_CHANNELS = 4; // expect an AWE design with 4 input channels
++static const unsigned int NUM_AWE_OUTPUT_CHANNELS = 3; // expect an AWE design with 3 output channels
++static const unsigned int SAMPLE_RATE = 48000; // hardware sample rate
++static const unsigned int BLOCK_SIZE = 768;
++const char awbFilename[] = "/home/root/AWELib/VoiceUI_imx8_2mic_AVS_v3b_1mb_sensory_AWELib.awb";
++
++static const unsigned int AVS_SAMPLE_RATE = 16000;
++static const unsigned int DECIMATION_FACTOR = SAMPLE_RATE/AVS_SAMPLE_RATE; // ratio of hardware sample rate to AVS sample rate
++static const unsigned int AWELIB_PORT = 15002;
++static const unsigned int PREFERRED_SAMPLES_PER_CALLBACK = BLOCK_SIZE;
+ 
+ static const std::string SAMPLE_APP_CONFIG_ROOT_KEY("sampleApp");
+ static const std::string PORTAUDIO_CONFIG_ROOT_KEY("portAudio");
+@@ -47,13 +66,101 @@ static const std::string TAG("PortAudioMicrophoneWrapper");
+  */
+ #define LX(event) alexaClientSDK::avsCommon::utils::logger::LogEntry(TAG, event)
+ 
++// NOTICE: AWELib tuning interface integration code taken from the AWELib libtest.cpp example
++// TODO: Newer AWELib implementations may hide the TCP setup from the user
++CAWELib *awelib;
++static CTcpIO2 *ptcpIO = 0; // Socket listener
++static void NotifyFunction(void *pAwe, int count) {
++    // Command buffer
++    static UINT32 commandBuf[MAX_COMMAND_BUFFER_LEN];
++
++    // Partial message offset in bytes
++    static UINT32 s_partial = 0;
++
++    // If non-zero, length of partial message in words
++    static UINT32 s_pktLen = 0;
++    CAWELib *awelib = (CAWELib *)pAwe;
++    SReceiveMessage *pCurrentReplyMsg = ptcpIO->BinaryGetMessage();
++    const int msglen = pCurrentReplyMsg->size();
++
++    if (msglen != 0) {
++        // This is a binary message.
++        UINT32 *txPacket_Host = (UINT32 *)(pCurrentReplyMsg->GetData());
++        if (txPacket_Host) {
++            UINT32 first = txPacket_Host[0];
++            UINT32 len = (first >> 16);
++            if (s_pktLen) {
++                len = s_pktLen;
++            }
++            if (len > MAX_COMMAND_BUFFER_LEN) {
++                printf("count=%d msglen=%d\n", count, msglen);
++                printf("NotifyFunction: packet 0x%08x len %d too big (max %d)\n", first, len, MAX_COMMAND_BUFFER_LEN);
++                exit(1);
++            }
++            if (len * sizeof(int) > s_partial + msglen) {
++                // Paxket is not complete, copy partial words.
++//				//printf("Partial message bytes=%d len=%d s_partial=%d\n",
++//					msglen, len, s_partial);
++                memcpy(((char *)commandBuf) + s_partial, txPacket_Host, msglen);
++                s_partial += msglen;
++                s_pktLen = len;
++                return;
++            }
++            memcpy(((char *)commandBuf) + s_partial, txPacket_Host, msglen);
++            s_partial = 0;
++            s_pktLen = 0;
++
++            // AWE processes the message.
++            int ret = awelib->SendCommand(commandBuf, MAX_COMMAND_BUFFER_LEN);
++            if (ret < 0) {
++                printf("NotifyFunction: SendCommand failed with %d\n", ret);
++                exit(1);
++            }
++
++            // Verify sane AWE reply.
++            len = commandBuf[0] >> 16;
++            if (len > MAX_COMMAND_BUFFER_LEN) {
++                printf("NotifyFunction: reply packet len %d too big (max %d)\n", len, MAX_COMMAND_BUFFER_LEN);
++                exit(1);
++            }
++            ret = ptcpIO->SendBinaryMessage("", -1, (BYTE *)commandBuf, len * sizeof(UINT32));
++            if (ret < 0) {
++                printf("NotifyFunction: SendBinaryMessage failed with %d\n", ret);
++                exit(1);
++            }
++        }
++        else {
++            printf("NotifyFunction: impossible no message pointer\n");
++            exit(1);
++        }
++    }
++    else {
++        printf("NotifyFunction: illegal zero klength message\n");
++        exit(1);
++    }
++}
++
++// AudioWeaver audio start handler
++static void OnAudioStart(void *) {
++    printf("[AudioWeaver] Audio started\n");
++}
++
++// AudioAWeaver audio stop handler
++static void OnAudioStop(void *) {
++    printf("[AudioWeaver] Audio stopped\n");
++}
++
+ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
+-    std::shared_ptr<AudioInputStream> stream) {
++    std::shared_ptr<avsCommon::avs::AudioInputStream> stream,
++    std::shared_ptr<alexaClientSDK::sampleApp::KeywordObserver> keywordObserver,
++    std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> speakMediaPlayer,
++    std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> audioMediaPlayer,
++    std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> alertsMediaPlayer) {
+     if (!stream) {
+         ACSDK_CRITICAL(LX("Invalid stream passed to PortAudioMicrophoneWrapper"));
+         return nullptr;
+     }
+-    std::unique_ptr<PortAudioMicrophoneWrapper> portAudioMicrophoneWrapper(new PortAudioMicrophoneWrapper(stream));
++    std::unique_ptr<PortAudioMicrophoneWrapper> portAudioMicrophoneWrapper(new PortAudioMicrophoneWrapper(stream, keywordObserver, speakMediaPlayer, audioMediaPlayer, alertsMediaPlayer));
+     if (!portAudioMicrophoneWrapper->initialize()) {
+         ACSDK_CRITICAL(LX("Failed to initialize PortAudioMicrophoneWrapper"));
+         return nullptr;
+@@ -61,19 +168,28 @@ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
+     return portAudioMicrophoneWrapper;
+ }
+ 
+-PortAudioMicrophoneWrapper::PortAudioMicrophoneWrapper(std::shared_ptr<AudioInputStream> stream) :
++PortAudioMicrophoneWrapper::PortAudioMicrophoneWrapper(
++    std::shared_ptr<avsCommon::avs::AudioInputStream> stream,
++    std::shared_ptr<alexaClientSDK::sampleApp::KeywordObserver> keywordObserver,
++    std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> speakMediaPlayer,
++    std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> audioMediaPlayer,
++    std::shared_ptr<alexaClientSDK::mediaPlayer::MediaPlayer> alertsMediaPlayer) :
+         m_audioInputStream{stream},
+-        m_paStream{nullptr} {
++        m_keywordObserver{keywordObserver},
++        m_speakMediaPlayer{speakMediaPlayer},
++        m_audioMediaPlayer{audioMediaPlayer},
++        m_alertsMediaPlayer{alertsMediaPlayer},
++        m_paHardwareStream{nullptr} {
+ }
+ 
+ PortAudioMicrophoneWrapper::~PortAudioMicrophoneWrapper() {
+-    Pa_StopStream(m_paStream);
+-    Pa_CloseStream(m_paStream);
++    Pa_StopStream(m_paHardwareStream);
++    Pa_CloseStream(m_paHardwareStream);
+     Pa_Terminate();
+ }
+ 
+ bool PortAudioMicrophoneWrapper::initialize() {
+-    m_writer = m_audioInputStream->createWriter(AudioInputStream::Writer::Policy::NONBLOCKABLE);
++    m_writer = m_audioInputStream->createWriter(avsCommon::avs::AudioInputStream::Writer::Policy::NONBLOCKABLE);
+     if (!m_writer) {
+         ACSDK_CRITICAL(LX("Failed to create stream writer"));
+         return false;
+@@ -87,20 +203,126 @@ bool PortAudioMicrophoneWrapper::initialize() {
+ 
+     PaTime suggestedLatency;
+     bool latencyInConfig = getConfigSuggestedLatency(suggestedLatency);
+-
++    
++	//Let DSPC decides how it handles latencyInConfig, so time being set it to false
++	latencyInConfig = false;
++	
+     if (!latencyInConfig) {
+-        err = Pa_OpenDefaultStream(
+-            &m_paStream,
+-            NUM_INPUT_CHANNELS,
+-            NUM_OUTPUT_CHANNELS,
+-            paInt16,
+-            SAMPLE_RATE,
+-            PREFERRED_SAMPLES_PER_CALLBACK,
+-            PortAudioCallback,
+-            this);
+-    } else {
+-        ACSDK_INFO(
+-            LX("PortAudio suggestedLatency has been configured to ").d("Seconds", std::to_string(suggestedLatency)));
++    err = Pa_OpenDefaultStream(
++        &m_paHardwareStream,
++        NUM_HARDWARE_INPUT_CHANNELS,
++        NUM_HARDWARE_OUTPUT_CHANNELS,
++        PA_SAMPLE_TYPE,
++        SAMPLE_RATE,
++        PREFERRED_SAMPLES_PER_CALLBACK,
++        PortAudioHardwareCallback,
++        this);
++    if (err != paNoError) {
++        ConsolePrinter::simplePrint("Failed to open PortAudio default stream");
++        return false;
++    }
++
++    // Setup the GStreamer appsinks in MediaPlayer.cpp
++    m_speakMediaPlayer->setupAppSink(GSTREAMER_SAMPLE_FORMAT, NUM_MEDIA_CHANNELS, SAMPLE_RATE, BLOCK_SIZE);
++    m_audioMediaPlayer->setupAppSink(GSTREAMER_SAMPLE_FORMAT, NUM_MEDIA_CHANNELS, SAMPLE_RATE, BLOCK_SIZE);
++    m_alertsMediaPlayer->setupAppSink(GSTREAMER_SAMPLE_FORMAT, NUM_MEDIA_CHANNELS, SAMPLE_RATE, BLOCK_SIZE);
++
++    // AWELib integration code take from the AWELib simple.cpp example
++    UINT32 numInFrames = 0;
++    UINT32 numInChannels = 0;
++    UINT32 numOutFrames = 0;
++    UINT32 numOutChannels = 0;
++    UINT32 isInComplex = 0;
++    UINT32 isOutComplex = 0;
++
++    // Create an AWELib instance
++    int error = 0;
++    awelib = AWELibraryFactory();
++    error = awelib->CreateEx("simple", 1e9f, 1e9f, true); // CreateEx is necessary to enable profiling
++#if 1 // for debug
++    if (error < 0) {
++        printf("Create AWE failed with %d\n", error);
++        delete awelib;
++        return false;
++    }
++
++    printf("Using library '%s'\n", awelib->GetLibraryVersion());
++
++    // Load a layout
++    error = awelib->LoadAwbFile(awbFilename);
++    if (error < 0) {
++        printf("LoadAwbFile of [%s] failed, error = %d\n", awbFilename, error);
++        delete awelib;
++        return false;
++    }
++    else {
++        printf("LoadAwbFile of [%s] successful\n", awbFilename);
++    }
++
++    // Get pin properties
++    UINT32 wireId1 = 1;  // default value
++    UINT32 wireId2 = 2;  // default value
++    UINT32 layoutId = 0; // default value
++
++    error = awelib->PinProps(numInFrames, numInChannels, isInComplex, wireId1, numOutFrames, numOutChannels,
++                             isOutComplex, wireId2);
++    if (error < 0) {
++        printf("PinProps failed with %d\n", error);
++        delete awelib;
++        return false;
++    } else if (error > 0) { // A valid layout
++        if (isInComplex)
++            numInChannels *= 2;
++        if (isOutComplex)
++            numOutChannels *= 2;
++        printf("in: %d samples, %d chans ID=%d; out: %d samples, %d chans ID=%d\n", numInFrames, numInChannels, wireId1, numOutFrames, numOutChannels, wireId2);
++    } else { // We have no layout
++        printf("PinProps found no layout\n");
++    }
++
++    // Run some checks
++    if (numInChannels != NUM_AWE_INPUT_CHANNELS) {
++        printf("The AWE design should have %d input channels, but it has %d input channels\n", NUM_AWE_INPUT_CHANNELS, numInChannels);
++        return false;
++    }
++
++    if (numOutChannels != NUM_AWE_OUTPUT_CHANNELS) {
++        printf("The AWE design should have %d output channels, but it has %d output channels\n", NUM_AWE_OUTPUT_CHANNELS, numOutChannels);
++        return false;
++    }
++
++    if (numInFrames != BLOCK_SIZE) {
++        printf("The AWE design should have %d input frames, but it has %d input frames\n", BLOCK_SIZE, numInFrames);
++        return false;
++    }
++
++    if (numOutFrames != BLOCK_SIZE) {
++        printf("The AWE design should have %d output frames, but it has %d output frames\n", BLOCK_SIZE, numOutFrames);
++        return false;
++    }
++
++    awelib->SetLayoutAddresses(wireId1, wireId2, layoutId);
++#endif
++
++    UINT32 listenPort = AWELIB_PORT;
++    ptcpIO = new CTcpIO2();
++    ptcpIO->SetNotifyFunction(awelib, NotifyFunction);
++    HRESULT hr = ptcpIO->CreateBinaryListenerSocket(listenPort);
++    if (FAILED(hr)) {
++        printf("Could not open socket on %d failed with %d\n", listenPort, hr);
++        delete ptcpIO;
++        delete awelib;
++        return false;
++    }
++
++    awelib->SetStartStopCallbacks(NULL, OnAudioStart, OnAudioStop);
++    printf("[AudioWeaver] Waiting for commands...\n");
++
++    } 
++#if 0
++	else {
++        ConsolePrinter::simplePrint(
++            "PortAudio suggestedLatency has been configured to " + std::to_string(suggestedLatency) + " Seconds");
+ 
+         PaStreamParameters inputParameters;
+         std::memset(&inputParameters, 0, sizeof(inputParameters));
+@@ -125,12 +347,17 @@ bool PortAudioMicrophoneWrapper::initialize() {
+         ACSDK_CRITICAL(LX("Failed to open PortAudio default stream"));
+         return false;
+     }
++#endif
+     return true;
+ }
+ 
+ bool PortAudioMicrophoneWrapper::startStreamingMicrophoneData() {
+     std::lock_guard<std::mutex> lock{m_mutex};
+-    PaError err = Pa_StartStream(m_paStream);
++
++    // Elevate hardware stream callback to a real-time task
++    PaAlsa_EnableRealtimeScheduling(m_paHardwareStream, 1);
++
++    PaError err = Pa_StartStream(m_paHardwareStream);
+     if (err != paNoError) {
+         ACSDK_CRITICAL(LX("Failed to start PortAudio stream"));
+         return false;
+@@ -140,7 +367,7 @@ bool PortAudioMicrophoneWrapper::startStreamingMicrophoneData() {
+ 
+ bool PortAudioMicrophoneWrapper::stopStreamingMicrophoneData() {
+     std::lock_guard<std::mutex> lock{m_mutex};
+-    PaError err = Pa_StopStream(m_paStream);
++    PaError err = Pa_StopStream(m_paHardwareStream);
+     if (err != paNoError) {
+         ACSDK_CRITICAL(LX("Failed to stop PortAudio stream"));
+         return false;
+@@ -148,15 +375,146 @@ bool PortAudioMicrophoneWrapper::stopStreamingMicrophoneData() {
+     return true;
+ }
+ 
+-int PortAudioMicrophoneWrapper::PortAudioCallback(
+-    const void* inputBuffer,
+-    void* outputBuffer,
++int PortAudioMicrophoneWrapper::PortAudioHardwareCallback(
++    const void* microphoneBuffer,
++    void* speakerBuffer,
+     unsigned long numSamples,
+     const PaStreamCallbackTimeInfo* timeInfo,
+     PaStreamCallbackFlags statusFlags,
+     void* userData) {
++
++    unsigned int channel;
++    unsigned long i;
++    int error = 0;
++
++    SAMPLE speakMediaPlayerBuffer[BLOCK_SIZE * NUM_MEDIA_CHANNELS];
++    SAMPLE audioMediaPlayerBuffer[BLOCK_SIZE * NUM_MEDIA_CHANNELS];
++    SAMPLE alertsMediaPlayerBuffer[BLOCK_SIZE * NUM_MEDIA_CHANNELS];
++    SAMPLE avsOutBuffer[BLOCK_SIZE * NUM_MEDIA_CHANNELS];
++    SAMPLE aweInBuffer[BLOCK_SIZE * NUM_AWE_INPUT_CHANNELS];
++    SAMPLE aweOutBuffer[BLOCK_SIZE * NUM_AWE_OUTPUT_CHANNELS];
++    short avsInBuffer[BLOCK_SIZE * NUM_AWE_OUTPUT_CHANNELS/DECIMATION_FACTOR];
++
++    if (numSamples != BLOCK_SIZE) {
++        printf("[PortAudioHardwareCallback] Received %lu but expected %u\n", numSamples, BLOCK_SIZE);
++        exit(1);
++    }
++
+     PortAudioMicrophoneWrapper* wrapper = static_cast<PortAudioMicrophoneWrapper*>(userData);
+-    ssize_t returnCode = wrapper->m_writer->write(inputBuffer, numSamples);
++
++    // Retrieve audio data fron the GStreamer sinks of each media player
++    wrapper->m_speakMediaPlayer->tryPullAppSink(speakMediaPlayerBuffer, BLOCK_SIZE * NUM_MEDIA_CHANNELS * sizeof(Sample));
++    wrapper->m_audioMediaPlayer->tryPullAppSink(audioMediaPlayerBuffer, BLOCK_SIZE * NUM_MEDIA_CHANNELS * sizeof(Sample));
++    wrapper->m_alertsMediaPlayer->tryPullAppSink(alertsMediaPlayerBuffer, BLOCK_SIZE * NUM_MEDIA_CHANNELS * sizeof(Sample));
++
++    for (i =0; i < (BLOCK_SIZE * NUM_MEDIA_CHANNELS); i++) {
++        avsOutBuffer[i] = speakMediaPlayerBuffer[i] + audioMediaPlayerBuffer[i] + alertsMediaPlayerBuffer[i];
++    }
++
++    // Prepare AWE buffer
++    for (channel = 0; channel < NUM_HARDWARE_INPUT_CHANNELS; channel++) {
++        for (i = 0; i < BLOCK_SIZE; i++) {
++            aweInBuffer[i*NUM_AWE_INPUT_CHANNELS+channel] = ((SAMPLE *) microphoneBuffer)[i*NUM_HARDWARE_INPUT_CHANNELS+channel];
++        }
++    }
++    for (channel = 0; channel < NUM_MEDIA_CHANNELS; channel++) {
++        for (i = 0; i < BLOCK_SIZE; i++) {
++            aweInBuffer[(i*NUM_AWE_INPUT_CHANNELS) + (channel+NUM_HARDWARE_INPUT_CHANNELS)] = ((SAMPLE *) avsOutBuffer)[i*NUM_MEDIA_CHANNELS+channel];
++        }
++    }
++
++    // Pump audio through AWELib only if a design is loaded and running
++    if (awelib->IsStarted()) {
++    // if (0) { // for debug
++        // Set PortAudio_Status
++        Sample paStatusFlags[AWE_PortAudio_Status_value_SIZE];
++
++        paStatusFlags[0].iVal = statusFlags;
++        error = awelib->SetValues(MAKE_ADDRESS(AWE_PortAudio_Status_ID, AWE_PortAudio_Status_value_OFFSET), AWE_PortAudio_Status_value_SIZE, paStatusFlags);
++        if (error == 0) {
++        }
++        else {
++            printf("[PortAudioHardwareCallback] Cannot set AWE_PortAudio_Status_ID");
++        }
++
++        // Set PortAudio_CPU_Load
++        Sample paLoad[AWE_PortAudio_CPU_Load_value_SIZE];
++
++        paLoad[0].fVal = Pa_GetStreamCpuLoad(wrapper->m_paHardwareStream);
++        error = awelib->SetValues(MAKE_ADDRESS(AWE_PortAudio_CPU_Load_ID, AWE_PortAudio_CPU_Load_value_OFFSET), AWE_PortAudio_CPU_Load_value_SIZE, paLoad);
++        if (error == 0) {
++        }
++        else {
++            printf("[PortAudioHardwareCallback] Cannot set AWE_PortAudio_CPU_Load_ID");
++        }
++
++        error = awelib->PumpAudio(aweInBuffer, aweOutBuffer, BLOCK_SIZE*NUM_AWE_INPUT_CHANNELS, BLOCK_SIZE*NUM_AWE_OUTPUT_CHANNELS);
++        if (error < 0) {
++            printf("[PortAudioHardwareCallback] PumpAudio failed, error = %d\n", error);
++            delete awelib;
++            exit(1);
++        }
++
++        // Handle wake word trigger from AWE design
++        Sample isTriggered[AWE_isTriggered_value_SIZE];
++        error = awelib->FetchValues(MAKE_ADDRESS(AWE_isTriggered_ID, AWE_isTriggered_value_OFFSET), AWE_isTriggered_value_SIZE, isTriggered);
++        if (error == 0) {
++            if (isTriggered[0].iVal) {
++                // printf("[PortAudioHardwareCallback] FetchValues: isTriggered[0] = %d, error = %d\n", isTriggered[0].iVal, error);
++
++                Sample startIndex[AWE_startIndex_value_SIZE];
++                error = awelib->FetchValues(MAKE_ADDRESS(AWE_startIndex_ID, AWE_startIndex_value_OFFSET), AWE_startIndex_value_SIZE, startIndex);
++                if (error == 0) {
++                    if (startIndex[0].iVal) {
++                    // printf("[PortAudioHardwareCallback] FetchValues: startIndex[0] = %d, error = %d\n", startIndex[0].iVal, error);
++                    }
++                }
++                else {
++                    printf("[PortAudioHardwareCallback] Cannot fetch AWE_startIndex_ID");
++                }
++
++                Sample endIndex[AWE_endIndex_value_SIZE];
++                error = awelib->FetchValues(MAKE_ADDRESS(AWE_endIndex_ID, AWE_endIndex_value_OFFSET), AWE_endIndex_value_SIZE, endIndex);
++                if (error == 0) {
++                    if (endIndex[0].iVal) {
++                    // printf("[PortAudioHardwareCallback] FetchValues: endIndex[0] = %d, error = %d\n", endIndex[0].iVal, error);
++                    }
++                }
++                else {
++                    printf("[PortAudioHardwareCallback] Cannot fetch AWE_endIndex_ID");
++                }
++
++                avsCommon::avs::AudioInputStream::Index beginIndexOfStreamWriter;
++                beginIndexOfStreamWriter = wrapper->m_writer->tell()-startIndex[0].iVal+BLOCK_SIZE;
++                avsCommon::avs::AudioInputStream::Index endIndexOfStreamWriter;
++                endIndexOfStreamWriter = wrapper->m_writer->tell()-endIndex[0].iVal+BLOCK_SIZE;
++                wrapper->m_keywordObserver->onKeyWordDetected(wrapper->m_audioInputStream, "ALEXA", beginIndexOfStreamWriter, endIndexOfStreamWriter);
++            }
++        }
++        else {
++            printf("[PortAudioHardwareCallback] Cannot fetch AWE_isTriggered_ID");
++        }
++    }
++    else { // Pump out zeros if a design is not loaded
++        for (i = 0; i < (BLOCK_SIZE*NUM_AWE_OUTPUT_CHANNELS); i++) {
++            aweOutBuffer[i] = 0;
++        }
++    }
++
++    // Prepare hardware output buffer
++    for (channel = 0; channel < NUM_HARDWARE_OUTPUT_CHANNELS; channel++) {
++        for (i = 0; i < BLOCK_SIZE; i++) {
++            ((SAMPLE *) speakerBuffer)[i*NUM_HARDWARE_OUTPUT_CHANNELS+channel] = aweOutBuffer[(i*NUM_AWE_OUTPUT_CHANNELS) + (channel+NUM_AVS_CHANNELS)];
++        }
++    }
++
++    // Prepare SDS buffer
++    channel = 0;
++    for (i = 0; i < BLOCK_SIZE/DECIMATION_FACTOR; i++) {
++             avsInBuffer[i] = aweOutBuffer[i*NUM_AWE_OUTPUT_CHANNELS * DECIMATION_FACTOR+channel] >> 16;
++        }
++
++    ssize_t returnCode = wrapper->m_writer->write(avsInBuffer, numSamples/DECIMATION_FACTOR);
+     if (returnCode <= 0) {
+         ACSDK_CRITICAL(LX("Failed to write to stream."));
+         return paAbort;
+diff --git a/SampleApp/src/SampleApplication.cpp b/SampleApp/src/SampleApplication.cpp
+index bf60519..d2325b3 100644
+--- a/SampleApp/src/SampleApplication.cpp
++++ b/SampleApp/src/SampleApplication.cpp
+@@ -598,12 +598,6 @@ bool SampleApplication::initialize(
+         holdCanOverride,
+         holdCanBeOverridden);
+ 
+-    std::shared_ptr<alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper> micWrapper =
+-        alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream);
+-    if (!micWrapper) {
+-        ACSDK_CRITICAL(LX("Failed to create PortAudioMicrophoneWrapper!"));
+-        return false;
+-    }
+ // Creating wake word audio provider, if necessary
+ #ifdef KWD
+     bool wakeAlwaysReadable = true;
+@@ -633,6 +627,14 @@ bool SampleApplication::initialize(
+     auto keywordObserver =
+         std::make_shared<alexaClientSDK::sampleApp::KeywordObserver>(client, wakeWordAudioProvider, espProvider);
+ 
++#if defined(KWD_AUDIOWEAVER)
++    std::shared_ptr<alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper> micWrapper =
++        alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream, keywordObserver, m_speakMediaPlayer, m_audioMediaPlayer, m_alertsMediaPlayer);
++    if (!micWrapper) {
++        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create PortAudioMicrophoneWrapper!");
++        return false;
++    }
++#else 
+     m_keywordDetector = alexaClientSDK::kwd::KeywordDetectorProvider::create(
+         sharedDataStream,
+         compatibleAudioFormat,
+@@ -643,6 +645,7 @@ bool SampleApplication::initialize(
+     if (!m_keywordDetector) {
+         ACSDK_CRITICAL(LX("Failed to create keyword detector!"));
+     }
++#endif
+ 
+     // If wake word is enabled, then creating the interaction manager with a wake word audio provider.
+     m_interactionManager = std::make_shared<alexaClientSDK::sampleApp::InteractionManager>(
+diff --git a/build/cmake/KeywordDetector.cmake b/build/cmake/KeywordDetector.cmake
+index 1594c51..c15985f 100644
+--- a/build/cmake/KeywordDetector.cmake
++++ b/build/cmake/KeywordDetector.cmake
+@@ -25,8 +25,10 @@ option(AMAZONLITE_KEY_WORD_DETECTOR "Enable AmazonLite keyword detector." OFF)
+ option(AMAZONLITE_KEY_WORD_DETECTOR_DYNAMIC_MODEL_LOADING "Enable AmazonLite keyword detector dynamic model loading." OFF)
+ option(KITTAI_KEY_WORD_DETECTOR "Enable KittAi keyword detector." OFF)
+ option(SENSORY_KEY_WORD_DETECTOR "Enable Sensory keyword detector." OFF)
++option(AUDIOWEAVER_KEY_WORD_DETECTOR "Enable AudioWeaver keyword detector." OFF)
+ 
+-if(NOT AMAZON_KEY_WORD_DETECTOR AND NOT AMAZONLITE_KEY_WORD_DETECTOR AND NOT KITTAI_KEY_WORD_DETECTOR AND NOT SENSORY_KEY_WORD_DETECTOR)
++
++if(NOT AMAZON_KEY_WORD_DETECTOR AND NOT AMAZONLITE_KEY_WORD_DETECTOR AND NOT KITTAI_KEY_WORD_DETECTOR AND NOT SENSORY_KEY_WORD_DETECTOR AND NOT AUDIOWEAVER_KEY_WORD_DETECTOR)
+     message("No keyword detector type specified, skipping build of keyword detector.")
+     return()
+ endif()
+@@ -89,3 +91,9 @@ if(SENSORY_KEY_WORD_DETECTOR)
+     add_definitions(-DKWD_SENSORY)
+     set(KWD ON)
+ endif()
++if(AUDIOWEAVER_KEY_WORD_DETECTOR)
++    message("Creating ${PROJECT_NAME} with keyword detector type: Audio Weaver Module")
++    add_definitions(-DKWD)
++    add_definitions(-DKWD_AUDIOWEAVER)
++    set(KWD ON)
++endif()
+-- 
+1.9.1
+

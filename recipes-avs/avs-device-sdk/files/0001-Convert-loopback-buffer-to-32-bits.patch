@@ -1,0 +1,47 @@
+From cc392b5d2d0edbb7660dcbd8cd81d9e44b410c89 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Tue, 17 Jul 2018 14:03:50 +0000
+Subject: [PATCH] Convert loopback buffer to 32 bits
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ SampleApp/src/PortAudioMicrophoneWrapper.cpp | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/SampleApp/src/PortAudioMicrophoneWrapper.cpp b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+index 1d602fb..117336b 100644
+--- a/SampleApp/src/PortAudioMicrophoneWrapper.cpp
++++ b/SampleApp/src/PortAudioMicrophoneWrapper.cpp
+@@ -520,7 +520,7 @@ int PortAudioMicrophoneWrapper::PortAudioHardwareCallback(
+ 
+ 
+        int err = snd_pcm_readi(handle, buffer, READ_FRAME);
+-//		printf(" bufer = %x %x %x %x", buffer[0], buffer[1], buffer[3], buffer[4]);
++//		printf(" bufer = 0x%x 0x%x 0x%x 0x%x\n", buffer[0], buffer[1], buffer[3], buffer[4]);
+         if (err == -EPIPE) printf( "Overrun occurred: %d\n", err);
+         if (err < 0) {
+             err = snd_pcm_recover(handle, err, 0);
+@@ -547,15 +547,19 @@ int PortAudioMicrophoneWrapper::PortAudioHardwareCallback(
+ 
+     for (i =0; i < (BLOCK_SIZE * NUM_MEDIA_CHANNELS); i++) {
+ //        avsOutBuffer[i] = speakMediaPlayerBuffer[i] + audioMediaPlayerBuffer[i] + alertsMediaPlayerBuffer[i];
+-		  avsOutBuffer[i] = buffer[i];
++		  avsOutBuffer[i] = (SAMPLE)(buffer[i] << 16);
++//		  avsOutBuffer[i] = buffer[i];
+     }
+ 
++
+     // Prepare AWE buffer
+     for (channel = 0; channel < NUM_HARDWARE_INPUT_CHANNELS; channel++) {
+         for (i = 0; i < BLOCK_SIZE; i++) {
+             aweInBuffer[i*NUM_AWE_INPUT_CHANNELS+channel] = ((SAMPLE *) microphoneBuffer)[i*NUM_HARDWARE_INPUT_CHANNELS+channel];
+         }
+     }
++
++
+     for (channel = 0; channel < NUM_MEDIA_CHANNELS; channel++) {
+         for (i = 0; i < BLOCK_SIZE; i++) {
+             aweInBuffer[(i*NUM_AWE_INPUT_CHANNELS) + (channel+NUM_HARDWARE_INPUT_CHANNELS)] = ((SAMPLE *) avsOutBuffer)[i*NUM_MEDIA_CHANNELS+channel];
+-- 
+1.9.1
+
