@@ -1,0 +1,26 @@
+From 8c9660c8eddffbc06c60b1a7f61ceff0989a6870 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Tue, 17 Jul 2018 17:32:35 +0000
+Subject: [PATCH] pico-pi-8m: set fdt_file to pico-pi-8m-voicehat on uboot
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ include/configs/pico-8m.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/pico-8m.h b/include/configs/pico-8m.h
+index 76bed30..87b5881 100644
+--- a/include/configs/pico-8m.h
++++ b/include/configs/pico-8m.h
+@@ -126,7 +126,7 @@
+ 	"fdt_addr=0x43000000\0"			\
+ 	"fdt_high=0xffffffffffffffff\0"		\
+ 	"boot_fdt=try\0" \
+-	"fdt_file=pico-8m.dtb\0" \
++	"fdt_file=pico-8m-voicehat.dtb\0" \
+ 	"initrd_addr=0x43800000\0"		\
+ 	"initrd_high=0xffffffffffffffff\0" \
+ 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
+-- 
+1.9.1
+
