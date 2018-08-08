@@ -4,3 +4,5 @@
 # Append path for freescale layer to include alsa-state asound.conf
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
+# for i.MX8M
+PACKAGE_ARCH_mx8 = "${MACHINE_ARCH}"
