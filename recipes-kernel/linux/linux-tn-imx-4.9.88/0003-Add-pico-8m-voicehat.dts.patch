@@ -1,0 +1,152 @@
+From e73ba15c0065227a901ab925e364e578b6ea65d9 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Tue, 3 Jul 2018 21:25:18 +0000
+Subject: [PATCH 3/3] Add pico-8m-voicehat.dts
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/pico-8m-voicehat.dts | 132 +++++++++++++++++++++
+ 1 file changed, 132 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/freescale/pico-8m-voicehat.dts
+
+diff --git a/arch/arm64/boot/dts/freescale/pico-8m-voicehat.dts b/arch/arm64/boot/dts/freescale/pico-8m-voicehat.dts
+new file mode 100644
+index 0000000..cad2b21
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/pico-8m-voicehat.dts
+@@ -0,0 +1,132 @@
++/*
++ * Copyright 2017 NXP
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include "pico-8m.dts"
++
++/ {
++	/delete-node/ sound-hdmi;
++
++	aliases {
++		i2c0 = &i2c1;
++		i2c1 = &i2c2;
++		i2c2 = &i2c3;
++		i2c3 = &i2c4;
++    };
++
++	sound_record: codec {
++		compatible = "knowles,sph0645";
++		
++	};
++
++	sound@1 {
++		compatible = "nxp,imx-audio-tfa98xx", "nxp,imx-tfa98xx";
++		nxp,model = "TFA9912";
++		cpu-dai = <&sai2>;
++		ssi-controller = <&sai2>;
++		nxp,audio-codec = <&tfa98xx_left &tfa98xx_right>;
++		clocks = <&clk IMX8MQ_AUDIO_PLL1>;
++		nxp,audio-routing =
++			"Speaker", "OUTL",
++			"DMIC1", "Mic",
++			"DMIC2", "Mic",
++			"DMIC3", "Mic",
++			"DMIC4", "Mic";
++	};
++
++	sound@2 {
++		compatible = "nxp,imx-audio-sph0645", "nxp,imx-sph0645";
++		nxp,model = "SPH0645";
++		cpu-dai = <&sai3>;
++		ssi-controller = <&sai3>;
++		nxp,audio-codec = <&sound_record>;
++		clocks = <&clk IMX8MQ_AUDIO_PLL1>;
++	};
++};
++
++&iomuxc {
++	pinctrl-names = "default";
++
++	pico-8m  {
++
++        pinctrl_sai2: sai2grp {
++            fsl,pins = <
++                MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC 0xd6
++                MX8MQ_IOMUXC_SAI2_TXC_SAI2_TX_BCLK  0xd6
++                MX8MQ_IOMUXC_SAI2_MCLK_SAI2_MCLK    0xd6
++                MX8MQ_IOMUXC_SAI2_TXD0_SAI2_TX_DATA0    0xd6
++                MX8MQ_IOMUXC_NAND_WE_B_GPIO3_IO17    0xd6
++            >;
++        };
++
++        pinctrl_sai3: sai3grp {
++            fsl,pins = <
++                MX8MQ_IOMUXC_SAI3_TXFS_SAI3_TX_SYNC 0xd6
++                MX8MQ_IOMUXC_SAI3_TXC_SAI3_TX_BCLK  0xd6
++                MX8MQ_IOMUXC_SAI3_RXD_SAI3_RX_DATA0 0xd6
++            >;
++        };
++	};
++};
++
++&i2c2 {
++	tfa98xx_left: tfa98xx_left@34 {
++		compatible = "nxp,tfa98xx";
++		reg = <0x34>;
++		reset-gpio = <&gpio3 17 GPIO_ACTIVE_HIGH>; //GPIO_P31
++		irq-gpio = <&gpio4 24 GPIO_ACTIVE_HIGH>; //GPIO_P35
++		clocks = <&clk IMX8MQ_AUDIO_PLL1>;
++	};
++	tfa98xx_right: tfa98xx_right@35 {
++		compatible = "nxp,tfa98xx";
++		reg = <0x35>;
++		clocks = <&clk IMX8MQ_AUDIO_PLL1>;
++	};
++};
++
++&sai2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai2>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI2_SRC>,
++			<&clk IMX8MQ_CLK_SAI2_DIV>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <0>, <49152000>;
++	status = "okay";
++};
++
++&sai3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai3>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI3_SRC>,
++			<&clk IMX8MQ_CLK_SAI3_DIV>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <0>, <24576000>;
++	status = "okay";
++};
++
++&dcss {
++    status = "disabled";
++};
++
++&hdmi {
++    status = "disabled";
++};
++
++&gpu {
++    status = "disabled";
++};
++
++&vpu {
++    status = "disabled";
++};
++
+-- 
+1.9.1
+

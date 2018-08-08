@@ -1,0 +1,26 @@
+From f21b3a1d0b69d46ae67f2bc095bdd6cc7c1e8c6d Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Mon, 16 Jul 2018 16:24:26 +0000
+Subject: [PATCH 4/5] tn_imx8_defconfig: add SPHA and TFA i.MX drivers to
+ defcofing
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ arch/arm64/configs/tn_imx8_defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/configs/tn_imx8_defconfig b/arch/arm64/configs/tn_imx8_defconfig
+index bccad96..d313976 100644
+--- a/arch/arm64/configs/tn_imx8_defconfig
++++ b/arch/arm64/configs/tn_imx8_defconfig
+@@ -559,3 +559,7 @@ CONFIG_CRYPTO_AES_ARM64_CE_CCM=y
+ CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
+ CONFIG_CRYPTO_CRC32_ARM64=y
+ CONFIG_SND_ALOOP=y
++CONFIG_LEDS_PCA995X=y
++CONFIG_SND_SOC_IMX_TFA98XX=y
++CONFIG_SND_SOC_IMX_SPH0645=y
++CONFIG_SND_SOC_SPH0645=y
+-- 
+1.9.1
+

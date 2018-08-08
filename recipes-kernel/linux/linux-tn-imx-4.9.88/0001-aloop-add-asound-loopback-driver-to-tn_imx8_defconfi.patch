@@ -1,0 +1,22 @@
+From d81fa3d4b88eeebef927cfb7364eac5b77507381 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Mon, 16 Jul 2018 16:18:36 +0000
+Subject: [PATCH 1/3] aloop: add asound loopback driver to tn_imx8_defconfig
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ arch/arm64/configs/tn_imx8_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/tn_imx8_defconfig b/arch/arm64/configs/tn_imx8_defconfig
+index 4b2e325..bccad96 100644
+--- a/arch/arm64/configs/tn_imx8_defconfig
++++ b/arch/arm64/configs/tn_imx8_defconfig
+@@ -558,3 +558,4 @@ CONFIG_CRYPTO_GHASH_ARM64_CE=y
+ CONFIG_CRYPTO_AES_ARM64_CE_CCM=y
+ CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
+ CONFIG_CRYPTO_CRC32_ARM64=y
++CONFIG_SND_ALOOP=y
+-- 
+1.9.1
+

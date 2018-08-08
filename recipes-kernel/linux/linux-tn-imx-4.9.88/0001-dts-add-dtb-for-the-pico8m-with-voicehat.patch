@@ -1,0 +1,27 @@
+From ea2d75b1251308c6332b06c288a1021c5ec69972 Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <juan.gutierrez@nxp.com>
+Date: Fri, 20 Jul 2018 20:39:00 +0000
+Subject: [PATCH] dts: add dtb for the pico8m with voicehat
+
+Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
+index 1fc4c97..8776469 100644
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -62,7 +62,8 @@ dtb-$(CONFIG_ARCH_FSL_IMX8MQ) += fsl-imx8mq-ddr3l-arm2.dtb \
+ 				 fsl-imx8mq-evk-drm.dtb \
+ 				 pico-8m.dtb \
+ 				 pico-8m-dcss-ili9881c.dtb \
+-				 wand-pi-8m.dtb
++				 wand-pi-8m.dtb \
++				 pico-8m-voicehat.dtb
+ 
+ always		:= $(dtb-y)
+ subdir-y	:= $(dts-dirs)
+-- 
+1.9.1
+
