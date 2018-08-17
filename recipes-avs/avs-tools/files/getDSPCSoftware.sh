@@ -43,13 +43,16 @@ do
  fi
 
  cd /home/root/
- git clone https://bitbucket.sw.nxp.com/scm/vs/awelib.git -b imx8m_2mic AWELib
+ git clone https://github.com/dspc-github/dspc-nxp-imx8m-2micVoiceUI.git  AWELib
 
  cd /home/root/AWELib
 
+ tar -xvzf awelib.tar.gz
+ cp -rv awelib/* .
+
  echo ""
  echo ""
- fold -s -w `tput cols` LICENSE.txt | more
+ fold -s -w `tput cols` LICENSE.md | more
  echo ""
  accepted=0
 

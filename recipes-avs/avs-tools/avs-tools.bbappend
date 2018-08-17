@@ -8,7 +8,7 @@ SRC_URI_append_pico-pi-8m-voicehat += " \
     file://compileAlexaWithAWB.sh \
 "
 
-do_install_append() {
+do_install_append_pico-pi-8m-voicehat() {
     install -d -m 0755 ${D}${DEST_SCRIPTS_DIR}
     install ${S}/getDSPCSoftware.sh ${D}${DEST_SCRIPTS_DIR}
     install ${S}/runHookBeforSampleApp.sh ${D}${DEST_SCRIPTS_DIR}
