@@ -1,4 +1,4 @@
-From 9920a39800cb12226430ce33d71c5a6df6f7ec5f Mon Sep 17 00:00:00 2001
+From 4f150f26b49e4422993ce71f44b02bec72d34bd0 Mon Sep 17 00:00:00 2001
 From: Juan Gutierrez <juan.gutierrez@nxp.com>
 Date: Wed, 8 Aug 2018 23:05:07 +0000
 Subject: [PATCH] DSPC: Add DSPC AudioWeaver support within Sample App
@@ -21,6 +21,7 @@ Signed-off-by: Juan Gutierrez <juan.gutierrez@nxp.com>
  SampleApp/src/SampleApplication.cpp                |  15 +-
  build/cmake/KeywordDetector.cmake                  |  10 +-
  12 files changed, 841 insertions(+), 58 deletions(-)
+ mode change 100644 => 100755 ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
 
 diff --git a/AVSCommon/AVS/include/AVSCommon/AVS/DialogUXStateAggregator.h b/AVSCommon/AVS/include/AVSCommon/AVS/DialogUXStateAggregator.h
 index 85b0d89..c005ab2 100644
@@ -36,18 +37,20 @@ index 85b0d89..c005ab2 100644
      /**
       * Adds an observer to be notified of UX state changes.
 diff --git a/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h b/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
-index 02727ec..eb15c17 100644
+old mode 100644
+new mode 100755
+index ff34df0..178b256
 --- a/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
 +++ b/ApplicationUtilities/DefaultClient/include/DefaultClient/DefaultClient.h
-@@ -42,6 +42,7 @@
- #include <AVSCommon/SDKInterfaces/DialogUXStateObserverInterface.h>
+@@ -43,6 +43,7 @@
  #include <AVSCommon/SDKInterfaces/SingleSettingObserverInterface.h>
  #include <AVSCommon/SDKInterfaces/TemplateRuntimeObserverInterface.h>
+ #include <AVSCommon/Utils/DeviceInfo.h>
 +#include <AVSCommon/SDKInterfaces/AudioInputProcessorObserverInterface.h>
  #include <AVSCommon/Utils/LibcurlUtils/HTTPContentFetcherFactory.h>
  #include <AVSCommon/Utils/MediaPlayer/MediaPlayerInterface.h>
  #include <AVSCommon/Utils/Network/InternetConnectionMonitor.h>
-@@ -185,6 +186,23 @@ public:
+@@ -196,6 +197,23 @@ public:
       */
      void stopForegroundActivity();
  
@@ -72,10 +75,10 @@ index 02727ec..eb15c17 100644
       * Adds an observer to be notified of Alexa dialog related UX state.
       *
 diff --git a/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp b/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp
-index 9f089ab..619acd2 100644
+index 892ddfd..6b91632 100644
 --- a/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp
 +++ b/ApplicationUtilities/DefaultClient/src/DefaultClient.cpp
-@@ -820,6 +820,15 @@ void DefaultClient::disconnect() {
+@@ -886,6 +886,15 @@ void DefaultClient::disconnect() {
  
  void DefaultClient::stopForegroundActivity() {
      m_audioFocusManager->stopForegroundActivity();
@@ -112,7 +115,7 @@ index 207abe7..7dc5930 100644
 \ No newline at end of file
 +asdk_install()
 diff --git a/MediaPlayer/include/MediaPlayer/MediaPlayer.h b/MediaPlayer/include/MediaPlayer/MediaPlayer.h
-index 1f820fc..4874883 100644
+index 4805325..7f7ea27 100644
 --- a/MediaPlayer/include/MediaPlayer/MediaPlayer.h
 +++ b/MediaPlayer/include/MediaPlayer/MediaPlayer.h
 @@ -29,6 +29,8 @@
@@ -124,10 +127,10 @@ index 1f820fc..4874883 100644
  
  #include <AVSCommon/SDKInterfaces/HTTPContentFetcherInterfaceFactoryInterface.h>
  #include <AVSCommon/SDKInterfaces/SpeakerInterface.h>
-@@ -115,6 +117,16 @@ public:
-     GstElement* getDecoder() const override;
-     GstElement* getPipeline() const override;
+@@ -117,6 +119,16 @@ public:
      guint queueCallback(const std::function<gboolean()>* callback) override;
+     guint attachSource(GSource* source) override;
+     gboolean removeSource(guint tag) override;
 +
 +    /// Another thread like PortAudioMicrophoneWrapper can set up the appsink with setupAppSink
 +    bool setupAppSink(GstAudioFormat audioFormat, unsigned int numChannels, unsigned int sampleRate, unsigned int blockSize);
@@ -141,7 +144,7 @@ index 1f820fc..4874883 100644
      /// @}
  
      /// @name Overriden UrlContentToAttachmentConverter::ErrorObserverInterface methods.
-@@ -151,6 +163,12 @@ private:
+@@ -153,6 +165,12 @@ private:
          /// The converter element.
          GstElement* converter;
  
@@ -154,7 +157,7 @@ index 1f820fc..4874883 100644
          /// The volume element.
          GstElement* volume;
  
-@@ -171,6 +189,8 @@ private:
+@@ -173,6 +191,8 @@ private:
                  appsrc{nullptr},
                  decoder{nullptr},
                  converter{nullptr},
@@ -163,7 +166,7 @@ index 1f820fc..4874883 100644
                  volume{nullptr},
                  audioSink{nullptr},
                  pipeline{nullptr} {};
-@@ -561,6 +581,20 @@ private:
+@@ -564,6 +584,20 @@ private:
  
      /// Stream offset before we teardown the pipeline
      std::chrono::milliseconds m_offsetBeforeTeardown;
@@ -198,7 +201,7 @@ index c8b92d5..06db77a 100644
  # install target
  asdk_install()
 diff --git a/MediaPlayer/src/MediaPlayer.cpp b/MediaPlayer/src/MediaPlayer.cpp
-index cb3204f..357d8d1 100644
+index 261620e..609cf61 100644
 --- a/MediaPlayer/src/MediaPlayer.cpp
 +++ b/MediaPlayer/src/MediaPlayer.cpp
 @@ -16,6 +16,8 @@
@@ -210,7 +213,7 @@ index cb3204f..357d8d1 100644
  
  #include <AVSCommon/AVS/Attachment/AttachmentReader.h>
  #include <AVSCommon/AVS/SpeakerConstants/SpeakerConstants.h>
-@@ -570,6 +572,125 @@ bool MediaPlayer::init() {
+@@ -591,6 +593,125 @@ bool MediaPlayer::init() {
      return true;
  }
  
@@ -336,7 +339,7 @@ index cb3204f..357d8d1 100644
  bool MediaPlayer::setupPipeline() {
      m_pipeline.converter = gst_element_factory_make("audioconvert", "converter");
      if (!m_pipeline.converter) {
-@@ -577,6 +698,18 @@ bool MediaPlayer::setupPipeline() {
+@@ -598,6 +719,18 @@ bool MediaPlayer::setupPipeline() {
          return false;
      }
  
@@ -355,7 +358,7 @@ index cb3204f..357d8d1 100644
      m_pipeline.volume = gst_element_factory_make("volume", "volume");
      if (!m_pipeline.volume) {
          ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createVolumeElementFailed"));
-@@ -586,7 +719,7 @@ bool MediaPlayer::setupPipeline() {
+@@ -607,7 +740,7 @@ bool MediaPlayer::setupPipeline() {
      std::string audioSinkElement;
      ConfigurationNode::getRoot()[MEDIAPLAYER_CONFIGURATION_ROOT_KEY].getString(
          MEDIAPLAYER_AUDIO_SINK_KEY, &audioSinkElement, "autoaudiosink");
@@ -364,7 +367,7 @@ index cb3204f..357d8d1 100644
      if (!m_pipeline.audioSink) {
          ACSDK_ERROR(LX("setupPipelineFailed")
                          .d("reason", "createAudioSinkElementFailed")
-@@ -665,14 +798,16 @@ bool MediaPlayer::setupPipeline() {
+@@ -682,14 +815,16 @@ bool MediaPlayer::setupPipeline() {
  
      // Link only the queue, converter, volume, and sink here. Src will be linked in respective source files.
      gst_bin_add_many(
@@ -384,7 +387,7 @@ index cb3204f..357d8d1 100644
              ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createVolumeToConverterLinkFailed"));
              return false;
          }
-@@ -683,11 +818,20 @@ bool MediaPlayer::setupPipeline() {
+@@ -700,11 +835,20 @@ bool MediaPlayer::setupPipeline() {
          }
      } else {
          // No output format specified, set up a normal pipeline
@@ -1219,10 +1222,10 @@ index 91055af..a37a28a 100644
          ACSDK_CRITICAL(LX("Failed to write to stream."));
          return paAbort;
 diff --git a/SampleApp/src/SampleApplication.cpp b/SampleApp/src/SampleApplication.cpp
-index bf60519..d2325b3 100644
+index acb92c2..9c8c357 100644
 --- a/SampleApp/src/SampleApplication.cpp
 +++ b/SampleApp/src/SampleApplication.cpp
-@@ -598,12 +598,6 @@ bool SampleApplication::initialize(
+@@ -604,12 +604,6 @@ bool SampleApplication::initialize(
          holdCanOverride,
          holdCanBeOverridden);
  
@@ -1235,7 +1238,7 @@ index bf60519..d2325b3 100644
  // Creating wake word audio provider, if necessary
  #ifdef KWD
      bool wakeAlwaysReadable = true;
-@@ -633,6 +627,14 @@ bool SampleApplication::initialize(
+@@ -639,6 +633,14 @@ bool SampleApplication::initialize(
      auto keywordObserver =
          std::make_shared<alexaClientSDK::sampleApp::KeywordObserver>(client, wakeWordAudioProvider, espProvider);
  
@@ -1250,7 +1253,7 @@ index bf60519..d2325b3 100644
      m_keywordDetector = alexaClientSDK::kwd::KeywordDetectorProvider::create(
          sharedDataStream,
          compatibleAudioFormat,
-@@ -643,6 +645,7 @@ bool SampleApplication::initialize(
+@@ -649,6 +651,7 @@ bool SampleApplication::initialize(
      if (!m_keywordDetector) {
          ACSDK_CRITICAL(LX("Failed to create keyword detector!"));
      }
