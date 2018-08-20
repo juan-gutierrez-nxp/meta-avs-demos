@@ -105,6 +105,34 @@ if [ $BUILD_AMAZONLITE == 1 ]; then
     fi
 fi
 
+BUILD_WIFI=0
+while true; do
+    echo ""
+    read -p "Do you want to include WiFi support on this image(Y/N)? " usrInput
+    case $usrInput in
+        [Yy]* ) BUILD_WIFI=1; break;;
+        [Nn]* ) BUILD_WIFI=0; break;;
+            * ) echo "Please answer yes or no.";;
+    esac
+done
+
+if [ $BUILD_WIFI == 1 ]; then
+   if [ ! -d ${BSPDIR}/sources/meta-pico8m-wifi ]; then
+       BUILD_WIFI=0
+       RED='\033[0;31m'
+       NC='\033[0m' # No Color
+       echo -e "${RED}"
+       echo "============================================================= "
+       echo " WARNING: meta-pico8m-wifi layer needs to be included on  "
+       echo " the sources directory to be able to include WiFi Support     "
+       echo " on this image. Please Contact NXP to get the meta layer.     "
+       echo "============================================================= "
+       echo -e "${NC}"
+    else
+       echo "BBLAYERS += \" \${BSPDIR}/sources/meta-pico8m-wifi \"" >> $BUILD_DIR/conf/bblayers.conf
+    fi
+fi
+
 if [ -d ${BSPDIR}/sources/meta-avs-extra-features ]; then
     source ${BSPDIR}/sources/meta-avs-extra-features/tools/avs-setup-extra-features.sh
 fi
@@ -121,6 +149,9 @@ echo " AVS configuration is now ready at conf/local.conf           "
 echo "                                                             "
 echo " - Sound Card = 2Mics Voice Hat (for DSPC)                   "
 echo " - Alexa SDK $ALEXA_VERSION pre-installed                    "
+if [ $BUILD_WIFI == 1 ]; then
+echo " - Wifi supported                                            "
+fi
 echo ""
 echo " You are ready to bitbake your AVS demo image now:           "
 echo "                                                             "
