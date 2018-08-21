@@ -12,6 +12,7 @@ SRC_URI_append_pico-pi-8m-voicehat += " \
     file://0003-Add-pico-8m-voicehat.dts.patch \
     file://0004-tn_imx8_defconfig-add-SPHA-and-TFA-i.MX-drivers-to-d.patch \
     file://0001-dts-add-dtb-for-the-pico8m-with-voicehat.patch \
+    file://0005-Linux-thermal-power-management.patch \
 "
 
 

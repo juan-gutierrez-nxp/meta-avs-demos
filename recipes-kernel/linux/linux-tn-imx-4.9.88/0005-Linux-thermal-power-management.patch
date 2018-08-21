@@ -1,0 +1,136 @@
+From cf929d8ed89b957841a6f8cd77b1a4d05a7f2748 Mon Sep 17 00:00:00 2001
+From: Sabeel Syed <sabeel.syed@nxp.com>
+Date: Thu, 12 Jul 2018 11:07:58 -0700
+Subject: [PATCH 5/5] Linux thermal power management
+
+	A53 is limited to 800 and 1Ghz
+	pmic VDD reduced for gpu soc arm and
+	vpu and gpu clks reduced
+
+Signed-off-by: Sabeel Syed <sabeel.syed@nxp.com>
+---
+ arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi |  6 +++---
+ arch/arm64/boot/dts/freescale/pico-8m.dts     | 10 +++++-----
+ arch/arm64/boot/dts/freescale/wand-pi-8m.dts  |  4 +---
+ drivers/gpu/imx/dcss/dcss-common.c            |  4 ++--
+ drivers/soc/imx/soc-imx8.c                    |  4 ++--
+ 5 files changed, 13 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
+index 6d5d6ae..4c08170 100755
+--- a/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
++++ b/arch/arm64/boot/dts/freescale/fsl-imx8mq.dtsi
+@@ -1145,9 +1145,9 @@
+ 		interrupt-names = "irq_3d";
+ 		clocks = <&clk IMX8MQ_CLK_GPU_ROOT>, <&clk IMX8MQ_CLK_GPU_SHADER_DIV>, <&clk IMX8MQ_CLK_GPU_AXI_DIV>, <&clk IMX8MQ_CLK_GPU_AHB_DIV>;
+ 		clock-names = "gpu3d_clk", "gpu3d_shader_clk", "gpu3d_axi_clk", "gpu3d_ahb_clk";
+-		assigned-clocks = <&clk IMX8MQ_CLK_GPU_CORE_SRC>, <&clk IMX8MQ_CLK_GPU_SHADER_SRC>, <&clk IMX8MQ_CLK_GPU_AXI_SRC>, <&clk IMX8MQ_CLK_GPU_AHB_SRC>;
++		assigned-clocks = <&clk IMX8MQ_CLK_GPU_CORE_SRC>, <&clk IMX8MQ_CLK_GPU_SHADER_SRC>, <&clk IMX8MQ_CLK_GPU_AXI_SRC>, <&clk IMX8MQ_CLK_GPU_AHB_SRC>, <&clk IMX8MQ_CLK_GPU_CORE_DIV>, <&clk IMX8MQ_CLK_GPU_SHADER_DIV>, <&clk IMX8MQ_CLK_GPU_AXI_DIV>, <&clk IMX8MQ_CLK_GPU_AHB_DIV>;
+ 		assigned-clock-parents = <&clk IMX8MQ_GPU_PLL_OUT>, <&clk IMX8MQ_GPU_PLL_OUT>, <&clk IMX8MQ_GPU_PLL_OUT>, <&clk IMX8MQ_GPU_PLL_OUT>;
+-		assigned-clock-rates = <800000000>, <800000000>, <800000000>, <800000000>;
++		assigned-clock-rates = <0>, <0>, <0>, <0>, <200000000>, <200000000>, <200000000>, <200000000>;	
+ 		power-domains = <&gpu_pd>;
+ 		depth-compression = <0>;
+ 		status = "disabled";
+@@ -1412,7 +1412,7 @@
+ 	operating-points = <
+ 		/* kHz    uV */
+ 		1000000 900000
+-		800000	900000
++		800000	850000
+ 	>;
+ 	clocks = <&clk IMX8MQ_CLK_A53_DIV>, <&clk IMX8MQ_CLK_A53_SRC>,
+ 		<&clk IMX8MQ_ARM_PLL>, <&clk IMX8MQ_ARM_PLL_OUT>,
+diff --git a/arch/arm64/boot/dts/freescale/pico-8m.dts b/arch/arm64/boot/dts/freescale/pico-8m.dts
+index 1171fc3..f94913d 100644
+--- a/arch/arm64/boot/dts/freescale/pico-8m.dts
++++ b/arch/arm64/boot/dts/freescale/pico-8m.dts
+@@ -455,11 +455,13 @@
+ 		bd71837,pmic-buck1-uses-i2c-dvs;
+ 		bd71837,pmic-buck1-dvs-voltage = <900000>, <850000>, <800000>; /* VDD_SOC: Run-Idle-Suspend */
+ 		bd71837,pmic-buck2-uses-i2c-dvs;
+-		bd71837,pmic-buck2-dvs-voltage = <1000000>, <900000>, <0>; /* VDD_ARM: Run-Idle */
++		bd71837,pmic-buck2-dvs-voltage = <900000>, <900000>, <0>; /* VDD_ARM: Run-Idle */
+ 		bd71837,pmic-buck3-uses-i2c-dvs;
+-		bd71837,pmic-buck3-dvs-voltage = <1000000>, <0>, <0>; /* VDD_GPU: Run */
++		bd71837,pmic-buck3-dvs-voltage = <850000>, <0>, <0>; /* VDD_GPU: Run */
+ 		bd71837,pmic-buck4-uses-i2c-dvs;
+-		bd71837,pmic-buck4-dvs-voltage = <1000000>, <0>, <0>; /* VDD_VPU: Run */
++		bd71837,pmic-buck4-dvs-voltage = <850000>, <0>, <0>; /* VDD_VPU: Run *0/
++		bd71837,pmic-buck5-uses-i2c-dvs;
++                bd71837,pmic-buck5-dvs-voltage = <900000>, <900000>, <700000>; /* VDD_DRAM: Run */
+ 
+ 		gpo {
+ 			rohm,drv = <0x0C>;	/* 0b0000_1100 all gpos with cmos output mode */
+@@ -814,8 +816,6 @@
+ &A53_0 {
+ 	operating-points = <
+ 		/* kHz    uV */
+-		1500000 1000000
+-		1300000 1000000
+ 		1000000 900000
+ 		800000  900000
+ 	>;
+diff --git a/arch/arm64/boot/dts/freescale/wand-pi-8m.dts b/arch/arm64/boot/dts/freescale/wand-pi-8m.dts
+index e33f9f0..8815f4f 100644
+--- a/arch/arm64/boot/dts/freescale/wand-pi-8m.dts
++++ b/arch/arm64/boot/dts/freescale/wand-pi-8m.dts
+@@ -785,10 +785,8 @@
+ &A53_0 {
+ 	operating-points = <
+ 		/* kHz    uV */
+-		1500000 1000000
+-		1300000 1000000
+ 		1000000 900000
+-		800000  900000
++		800000  850000
+ 	>;
+ };
+ 
+diff --git a/drivers/gpu/imx/dcss/dcss-common.c b/drivers/gpu/imx/dcss/dcss-common.c
+index 757c5b9..11c24fa 100644
+--- a/drivers/gpu/imx/dcss/dcss-common.c
++++ b/drivers/gpu/imx/dcss/dcss-common.c
+@@ -492,7 +492,7 @@ static int dcss_suspend(struct device *dev)
+ 
+ 	dcss_clocks_enable(dcss, false);
+ 
+-	pm_qos_remove_request(&dcss->pm_qos_req);
++	//pm_qos_remove_request(&dcss->pm_qos_req);
+ 
+ 	dcss_bus_freq(dcss, false);
+ 
+@@ -509,7 +509,7 @@ static int dcss_resume(struct device *dev)
+ 
+ 	dcss_bus_freq(dcss, true);
+ 
+-	pm_qos_add_request(&dcss->pm_qos_req, PM_QOS_CPU_DMA_LATENCY, 0);
++	//pm_qos_add_request(&dcss->pm_qos_req, PM_QOS_CPU_DMA_LATENCY, 0);
+ 
+ 	dcss_clocks_enable(dcss, true);
+ 
+diff --git a/drivers/soc/imx/soc-imx8.c b/drivers/soc/imx/soc-imx8.c
+index 65b6f67..7184589 100644
+--- a/drivers/soc/imx/soc-imx8.c
++++ b/drivers/soc/imx/soc-imx8.c
+@@ -361,7 +361,7 @@ static void __init imx8mq_opp_check_speed_grading(struct device *cpu_dev)
+ 	val = readl_relaxed(base + OCOTP_CFG3);
+ 	val >>= OCOTP_CFG3_MKT_SEGMENT_SHIFT;
+ 	val &= 0x3;
+-
++#if 0
+ 	switch (val) {
+ 	case OCOTP_CFG3_CONSUMER:
+ 		if (dev_pm_opp_disable(cpu_dev, 800000000))
+@@ -383,7 +383,7 @@ static void __init imx8mq_opp_check_speed_grading(struct device *cpu_dev)
+ 			pr_warn("failed to disable 1.3GHz OPP!\n");
+ 		break;
+ 	}
+-
++#endif
+ 	iounmap(base);
+ 
+ put_node:
+-- 
+1.9.1
+
