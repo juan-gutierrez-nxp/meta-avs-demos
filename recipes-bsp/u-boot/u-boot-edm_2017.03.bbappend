@@ -6,4 +6,5 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 SRC_URI_append_pico-pi-8m-voicehat += " \
     file://0001-pico-pi-8m-set-fdt_file-to-pico-pi-8m-voicehat-on-ub.patch \
+    file://0001-uboot-thermal-power-management.patch \
 "
