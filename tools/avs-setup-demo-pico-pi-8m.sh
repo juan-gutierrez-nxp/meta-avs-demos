@@ -133,6 +133,15 @@ if [ $BUILD_WIFI == 1 ]; then
     fi
 fi
 
+SOUNDCARD="VOICEHAT"
+
+CAPABLE_ESP=1
+CAPABLE_MRM=1
+CAPABLE_DISPLAYCARDS=1
+CAPABLE_SENSORY=1
+CAPABLE_AWELIB=1
+CAPABLE_SPOTIFY=0
+
 if [ -d ${BSPDIR}/sources/meta-avs-extra-features ]; then
     source ${BSPDIR}/sources/meta-avs-extra-features/tools/avs-setup-extra-features.sh
 fi
