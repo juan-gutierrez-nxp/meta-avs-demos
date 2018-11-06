@@ -50,6 +50,8 @@ sleep 1
 amixer cset numid=1 0
 
 cp /home/root/tfa98xx/climax /home/root/
+cp /home/root/led-daemon/sendAlexaMsgQ /usr/bin/
+
 /home/root/tfa98xx/run_calibrate_once.sh
 
 exit 0
