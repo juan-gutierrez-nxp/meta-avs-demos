@@ -10,9 +10,11 @@ DEST_ETC_ALEXA_DIR ?= "/etc/alexa_sdk/"
 DEST_HOME_DIR ?= "/home/root/"
 DEST_SDK_DIR ?= "/home/root/Alexa_SDK/" 
 DEST_SCRIPTS_DIR ?= "/home/root/Alexa_SDK/Scripts/"
+DEST_MRMPKGS_DIR ?= "/home/root/Alexa_SDK/mrm_packages"
 
 INSANE_SKIP_${PN} += "installed-vs-shipped"
 INSANE_SKIP_${PN} += "file-rdeps"
+INSANE_SKIP_${PN} += "already-stripped"
 
 inherit systemd
 
@@ -27,6 +29,7 @@ do_install() {
     install -d -m 0755 ${D}${DEST_SDK_DIR}
     install -d -m 0755 ${D}${DEST_SCRIPTS_DIR}
     install -d -m 0755 ${D}${DEST_HOME_DIR}
+    install -d -m 0755 ${D}${DEST_MRMPKGS_DIR}
     
 
     cp -r ${S}${DEST_ETC_ALEXA_DIR}/* ${D}${DEST_ETC_ALEXA_DIR}
@@ -35,6 +38,8 @@ do_install() {
 
     cp -r ${S}${DEST_HOME_DIR}/afe_process ${D}${DEST_HOME_DIR}
     cp -r ${S}${DEST_HOME_DIR}/led-daemon ${D}${DEST_HOME_DIR}
+
+    cp -r ${S}${DEST_MRMPKGS_DIR}/* ${D}${DEST_MRMPKGS_DIR}
 
     if ${@bb.utils.contains('DISTRO_FEATURES','systemd','true','false',d)}; then
         install -d ${D}${systemd_unitdir}/system
@@ -46,7 +51,7 @@ do_install() {
     ln -s ${DEST_SCRIPTS_DIR}/runAlexaSampleApp.sh runAlexaSampleApp.sh
 }
 
-FILES_${PN} = "${DEST_ETC_DIR} ${DEST_ETC_ALEXA_DIR}  ${DEST_SCRIPTS_DIR} ${DEST_SDK_DIR} ${DEST_HOME_DIR}"
+FILES_${PN} = "${DEST_ETC_DIR} ${DEST_ETC_ALEXA_DIR}  ${DEST_SCRIPTS_DIR} ${DEST_SDK_DIR} ${DEST_HOME_DIR} ${DEST_MRMPKGS_DIR}"
 BBCLASSEXTEND = "native"
 
 SYSTEMD_PACKAGES = "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '${PN}', '', d)}"
