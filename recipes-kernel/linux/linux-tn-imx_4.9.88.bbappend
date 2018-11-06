@@ -6,15 +6,17 @@
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-SRC_URI_append_pico-pi-8m-voicehat += " \
-	file://0001-aloop-add-asound-loopback-driver-to-tn_imx8_defconfi.patch \
-    file://0002-drivers-integrate-led-spha-and-tfa-drivers-for-8M.patch \
-    file://0003-Add-pico-8m-voicehat.dts.patch \
-    file://0004-tn_imx8_defconfig-add-SPHA-and-TFA-i.MX-drivers-to-d.patch \
-    file://0001-dts-add-dtb-for-the-pico8m-with-voicehat.patch \
-    file://0005-Linux-thermal-power-management.patch \
-"
+SRC_URI = "git://bitbucket.sw.nxp.com/scm/vs/kernel_technexion.git;branch=led_pico8m_dev;protocol=https"
 
+SRCREV = "${AUTOREV}"
+LOCALVERSION = "-led_pico8m_dev"
+
+SRC_URI[md5sum] = "5a86d7ac674e34bcc2bb2bd5faae2cfe"
+SRC_URI[sha256sum] = "d33be6cbd99714be420b18246c783927267193d53f55e430c85c4854f2464ec4"
+
+SRC_URI_append_pico-pi-8m-voicehat += " \
+    file://0001-tn_imx8_defconfig-set-SND_SOC_IMX_TFA98XX-as-module.patch \
+"
 
 do_compile_pico-pi-8m-voicehat () {
     make tn_imx8_defconfig
