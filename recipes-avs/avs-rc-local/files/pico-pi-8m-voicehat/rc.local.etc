@@ -33,10 +33,21 @@ if [ ! -e /home/root/amazon_files ]; then
 	sync
 fi
 
+if [ ! -e /home/root/snd-soc-imx-tfa98xx.ko ]; then
+	cp /lib/modules/*/kernel/sound/soc/fsl/snd-soc-imx-tfa98xx.ko /home/root/snd-soc-imx-tfa98xx.ko
+        sync
+fi
+
 sleep 7
 
-insmod /home/root/snd-soc-tfa98xx.ko fw_name="TFA9892N1A_stereo_32FS.cnt" trace_level=1 dflt_prof_name="dsp_bypass_P" dflt_prof_name2="dsp_bypass_S"
+rmmod snd_soc_imx_tfa98xx
 sleep 1
-amixer cset numid=1 6
+
+insmod /home/root/snd-soc-tfa98xx.ko fw_name="TFA9892N1A_stereo_32FS_Amazon_MRM.cnt"
+sleep 1
+insmod /home/root/snd-soc-imx-tfa98xx.ko
+sleep 1
+amixer cset numid=1 0
+~/tfa98xx/run_calibrate_once.sh
 
 exit 0
