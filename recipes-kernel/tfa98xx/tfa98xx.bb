@@ -7,14 +7,14 @@ inherit module
 INSANE_SKIP_${PN} = "already-stripped"
 INSANE_SKIP_${PN} += "staticdev"
 
-SRC_URI = " \
-			file://linux_driver.zip \
-			file://TFA9892N1A_stereo_32FS.cnt \
+
+SRC_URI = "git://source.codeaurora.org/external/mas/tfa98xx;branch=master;protocol=https \
+	   file://0001-Makefile-replace-KDIR-with-KERNEL_SRC.patch \
+	   file://AlexaMRM_11022018.tar.xz \
 "
+SRCREV = "${AUTOREV}"
 
-S = "${WORKDIR}/linux_driver"
-
-
+S = "${WORKDIR}/git"
 
 DEST_DIR = "/home/root"
 FW_DIR = "/lib/firmware"
@@ -22,9 +22,12 @@ FW_DIR = "/lib/firmware"
 do_install() {
 	install -d -m 0755 ${D}${DEST_DIR}
 	install -d -m 0755 ${D}${FW_DIR}
+        install -d -m 0755 ${D}${DEST_DIR}/tfa98xx
 	cp ${S}/snd-soc-tfa98xx.ko ${D}${DEST_DIR}
-	cp ${WORKDIR}/TFA9892N1A_stereo_32FS.cnt ${D}${FW_DIR}
+	cp -r ${WORKDIR}/AlexaMRM_11022018/* ${D}${DEST_DIR}/tfa98xx/
+        cp ${WORKDIR}/AlexaMRM_11022018/TFA9892N1A_stereo_32FS_Amazon_MRM.cnt ${D}${FW_DIR}
+        cp ${WORKDIR}/AlexaMRM_11022018/TFA9892N1A_stereo_32FS_calibration.cnt ${D}${FW_DIR}
 }
 
-FILES_${PN} = "${DEST_DIR} ${FW_DIR}"
+FILES_${PN} = "${DEST_DIR} ${FW_DIR} ${DEST_DIR}/tfa98xx"
 BBCLASSEXTEND = "native"

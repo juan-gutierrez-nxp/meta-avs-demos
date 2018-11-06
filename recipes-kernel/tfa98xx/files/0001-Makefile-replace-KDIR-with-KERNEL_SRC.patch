@@ -1,0 +1,32 @@
+From 7b7ed90c904010e873eb4ae953b272adfc11048e Mon Sep 17 00:00:00 2001
+From: Juan Gutierrez <jgutierrez@nxp.com>
+Date: Mon, 5 Nov 2018 11:51:39 -0600
+Subject: [PATCH] Makefile: replace KDIR with KERNEL_SRC
+
+This way can be build by yocto
+
+Signed-off-by: Juan Gutierrez <jgutierrez@nxp.com>
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 8726d75..633d9d4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -48,10 +48,10 @@ else
+ MAKEARCH := $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
+ 
+ all:
+-	$(MAKEARCH) -C $(KDIR) M=$(PWD) modules
++	$(MAKEARCH) -C $(KERNEL_SRC) M=$(PWD) modules
+ 
+ clean:
+-	$(MAKEARCH) -C $(KDIR) M=$(PWD) clean
++	$(MAKEARCH) -C $(KERNEL_SRC) M=$(PWD) clean
+ 	rm -f $(snd-soc-tfa98xx-objs)
+ 
+ endif
+-- 
+1.9.1
+
