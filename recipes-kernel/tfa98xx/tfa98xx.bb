@@ -27,6 +27,10 @@ do_install() {
 	cp -r ${WORKDIR}/AlexaMRM_11022018/* ${D}${DEST_DIR}/tfa98xx/
         cp ${WORKDIR}/AlexaMRM_11022018/TFA9892N1A_stereo_32FS_Amazon_MRM.cnt ${D}${FW_DIR}
         cp ${WORKDIR}/AlexaMRM_11022018/TFA9892N1A_stereo_32FS_calibration.cnt ${D}${FW_DIR}
+
+	cd ${D}/${DEST_DIR}
+	ln -s ${FW_DIR}/TFA9892N1A_stereo_32FS_Amazon_MRM.cnt TFA9892N1A_stereo_32FS_Amazon_MRM.cnt
+	ln -s ${FW_DIR}/TFA9892N1A_stereo_32FS_calibration.cnt TFA9892N1A_stereo_32FS_calibration.cnt
 }
 
 FILES_${PN} = "${DEST_DIR} ${FW_DIR} ${DEST_DIR}/tfa98xx"
