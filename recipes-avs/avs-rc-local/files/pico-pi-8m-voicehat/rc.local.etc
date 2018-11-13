@@ -40,18 +40,10 @@ fi
 
 sleep 7
 
-rmmod snd_soc_imx_tfa98xx
-sleep 1
-
-insmod /home/root/snd-soc-tfa98xx.ko fw_name="TFA9892N1A_stereo_32FS_Amazon_MRM.cnt"
-sleep 1
-insmod /home/root/snd-soc-imx-tfa98xx.ko
-sleep 1
-amixer cset numid=1 0
+/home/root/tfa98xx/init_tfa.sh
 
 cp /home/root/tfa98xx/climax /home/root/
 cp /home/root/led-daemon/sendAlexaMsgQ /usr/bin/
 
-/home/root/tfa98xx/run_calibrate_once.sh
 
 exit 0
