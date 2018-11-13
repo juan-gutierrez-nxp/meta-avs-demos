@@ -8,7 +8,7 @@ INSANE_SKIP_${PN} = "already-stripped"
 INSANE_SKIP_${PN} += "staticdev"
 
 
-SRC_URI = "git://source.codeaurora.org/external/mas/tfa98xx;branch=master;protocol=https \
+SRC_URI = "git://source.codeaurora.org/external/mas/tfa98xx;branch=DIN_v6.5.5;protocol=https \
 	   file://0001-Makefile-replace-KDIR-with-KERNEL_SRC.patch \
 	   file://AlexaMRM_11022018.tar.xz \
 "
@@ -27,10 +27,14 @@ do_install() {
 	cp -r ${WORKDIR}/AlexaMRM_11022018/* ${D}${DEST_DIR}/tfa98xx/
         cp ${WORKDIR}/AlexaMRM_11022018/TFA9892N1A_stereo_32FS_Amazon_MRM.cnt ${D}${FW_DIR}
         cp ${WORKDIR}/AlexaMRM_11022018/TFA9892N1A_stereo_32FS_calibration.cnt ${D}${FW_DIR}
+        cp ${WORKDIR}/TFA9892N1A_stereo_32FS.cnt ${D}${FW_DIR}
 
 	cd ${D}/${DEST_DIR}
-	ln -s ${FW_DIR}/TFA9892N1A_stereo_32FS_Amazon_MRM.cnt TFA9892N1A_stereo_32FS_Amazon_MRM.cnt
+	ln -s ${FW_DIR}/TFA9892N1A_stereo_32FS.cnt TFA9892N1A_stereo_32FS.cnt
 	ln -s ${FW_DIR}/TFA9892N1A_stereo_32FS_calibration.cnt TFA9892N1A_stereo_32FS_calibration.cnt
+
+	cd ${D}${FW_DIR}
+	ln -s TFA9892N1A_stereo_32FS.cnt tfa98xx.cnt
 }
 
 FILES_${PN} = "${DEST_DIR} ${FW_DIR} ${DEST_DIR}/tfa98xx"
