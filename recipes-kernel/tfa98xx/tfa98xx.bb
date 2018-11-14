@@ -10,6 +10,7 @@ INSANE_SKIP_${PN} += "staticdev"
 
 SRC_URI = "git://source.codeaurora.org/external/mas/tfa98xx;branch=DIN_v6.5.5;protocol=https \
 	   file://0001-Makefile-replace-KDIR-with-KERNEL_SRC.patch \
+           file://TFA9892N1A_stereo_32FS.cnt \	
 	   file://AlexaMRM_11022018.tar.xz \
 "
 SRCREV = "${AUTOREV}"
