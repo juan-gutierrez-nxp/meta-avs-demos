@@ -1,2 +1,2 @@
-IMAGE_INSTALL_append_pico-pi-8m-voicehat = " tfa98xx"
+IMAGE_INSTALL_append_pico-pi-8m-voicehat = " tfa98xx qcacld-driver extra-firmware"
 

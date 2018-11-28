@@ -1,18 +1,21 @@
-From ec079291d725588b2623ad02b136948ec4bfaf64 Mon Sep 17 00:00:00 2001
-From: Juan Gutierrez <jgutierrez@nxp.com>
-Date: Mon, 5 Nov 2018 18:01:46 -0600
-Subject: [PATCH] tn_imx8_defconfig: set SND_SOC_IMX_TFA98XX as module
-
-Signed-off-by: Juan Gutierrez <jgutierrez@nxp.com>
----
- arch/arm64/configs/tn_imx8_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
 diff --git a/arch/arm64/configs/tn_imx8_defconfig b/arch/arm64/configs/tn_imx8_defconfig
-index 71fb6d9..e8dcf79 100644
+index 71fb6d9..b4adafb 100644
 --- a/arch/arm64/configs/tn_imx8_defconfig
 +++ b/arch/arm64/configs/tn_imx8_defconfig
-@@ -560,7 +560,7 @@ CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
+@@ -227,9 +227,9 @@ CONFIG_USB_NET_SMSC95XX=m
+ CONFIG_USB_NET_PLUSB=m
+ CONFIG_USB_NET_MCS7830=m
+ # CONFIG_WLAN_VENDOR_ADMTEK is not set
+-CONFIG_ATH10K=m
+-CONFIG_ATH10K_SDIO=m
+-CONFIG_ATH10K_DEBUGFS=y
++CONFIG_ATH10K=n
++CONFIG_ATH10K_SDIO=n
++CONFIG_ATH10K_DEBUGFS=n
+ # CONFIG_WLAN_VENDOR_ATMEL is not set
+ # CONFIG_WLAN_VENDOR_BROADCOM is not set
+ # CONFIG_WLAN_VENDOR_CISCO is not set
+@@ -560,7 +560,11 @@ CONFIG_CRYPTO_AES_ARM64_CE_BLK=y
  CONFIG_CRYPTO_CRC32_ARM64=y
  CONFIG_SND_ALOOP=y
  CONFIG_LEDS_PCA995X=y
@@ -21,6 +24,7 @@ index 71fb6d9..e8dcf79 100644
  CONFIG_SND_SOC_IMX_SPH064X=y
  CONFIG_HZ_1000=y
  CONFIG_HZ=1000
--- 
-1.9.1
-
++
++CONFIG_WLAN_VENDOR_INTERSIL=y
++CONFIG_HOSTAP=y
++CONFIG_NL80211_TESTMODE=y
