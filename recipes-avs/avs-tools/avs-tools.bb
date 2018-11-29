@@ -18,10 +18,10 @@ INSANE_SKIP_${PN} += "already-stripped"
 
 inherit systemd
 
-SRC_URI = "git://bitbucket.sw.nxp.com/scm/vs/pico-pi-mrm-manually.git;branch=master;protocol=https"
+SRC_URI = "git://bitbucket.sw.nxp.com/scm/vs/pico-pi-mrm-manually.git;branch=master;protocol=https;user=nxa06945:jg016GdlOct18"
 
-#SRCREV = "${AUTOREV}"
-SRCREV = "4f2e7569c9316b55d8f7a7446f6d184b15a333db"
+SRCREV = "${AUTOREV}"
+#SRCREV = "4f2e7569c9316b55d8f7a7446f6d184b15a333db"
 
 S = "${WORKDIR}/git/"
 
