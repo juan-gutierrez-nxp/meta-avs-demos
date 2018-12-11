@@ -45,6 +45,8 @@ sleep 7
 cp /home/root/tfa98xx/climax /home/root/
 cp /home/root/led-daemon/sendAlexaMsgQ /usr/bin/
 
+sleep 2
+
 amixer cset numid=1 0
 
 exit 0
