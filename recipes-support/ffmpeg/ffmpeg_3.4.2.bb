@@ -28,6 +28,7 @@ SRC_URI = "https://www.ffmpeg.org/releases/${BP}.tar.xz \
 		   file://wha-version.patch \
            file://fix-no-lame-hdr-delay.patch \
            file://fix-sbr-delay.patch \
+	   file://id3-tags-in-adts.patch \
            "
 SRC_URI[md5sum] = "cbf4ead227fcedddf54c86013705a988"
 SRC_URI[sha256sum] = "2b92e9578ef8b3e49eeab229e69305f5f4cbc1fdaa22e927fc7fca18acccd740"
