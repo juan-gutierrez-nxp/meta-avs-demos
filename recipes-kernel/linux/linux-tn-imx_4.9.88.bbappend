@@ -6,7 +6,7 @@
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-SRC_URI = "git://bitbucket.sw.nxp.com/scm/vs/kernel_technexion.git;branch=led_pico8m_dev;protocol=https"
+SRC_URI = "git://git@bitbucket.sw.nxp.com/vs/kernel_technexion.git;branch=led_pico8m_dev;protocol=ssh"
 
 #SRCREV = "${AUTOREV}"
 SRCREV = "dfd480a34b56c0a86d1cbd0b8854d64c3cf1c882"
